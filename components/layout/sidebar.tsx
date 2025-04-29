@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { BarChart3, Home, Package, Settings, ShoppingCart, Tag, Truck, Users, Menu, X } from "lucide-react"
+import { BarChart3, Home, Package, Settings, ShoppingCart, Tag, Truck, Users, Menu, X, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface SidebarProps {
@@ -39,10 +39,16 @@ export function Sidebar({ className }: SidebarProps) {
       active: pathname.startsWith("/users"),
     },
     {
-      label: "Drivers",
+      label: "Vans",
       icon: Truck,
-      href: "/drivers",
-      active: pathname.startsWith("/drivers"),
+      href: "/vans",
+      active: pathname.startsWith("/vans"),
+    },
+    {
+      label: "Regions",
+      icon: MapPin,
+      href: "/regions",
+      active: pathname.startsWith("/regions"),
     },
     {
       label: "Services",

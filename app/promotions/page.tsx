@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
+import { useState, useRef } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,7 +23,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { MoreVertical, Plus, Edit, Trash } from "lucide-react"
+import { MoreVertical, Plus, Edit, Trash, ImageIcon, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 // Sample promotion data
 const initialPromotions = [
@@ -38,6 +41,7 @@ const initialPromotions = [
     usageLimit: 1,
     usageCount: 45,
     minOrderValue: 0,
+    image: "/placeholder.svg?height=155&width=312",
   },
   {
     id: 2,
@@ -52,6 +56,7 @@ const initialPromotions = [
     usageLimit: 0,
     usageCount: 28,
     minOrderValue: 0,
+    image: "/placeholder.svg?height=155&width=312",
   },
   {
     id: 3,
@@ -66,6 +71,7 @@ const initialPromotions = [
     usageLimit: 0,
     usageCount: 67,
     minOrderValue: 25,
+    image: "/placeholder.svg?height=155&width=312",
   },
   {
     id: 4,
@@ -80,6 +86,7 @@ const initialPromotions = [
     usageLimit: 0,
     usageCount: 32,
     minOrderValue: 0,
+    image: "/placeholder.svg?height=155&width=312",
   },
   {
     id: 5,
@@ -87,13 +94,14 @@ const initialPromotions = [
     code: "BULK25",
     type: "percentage",
     value: 25,
-    description: "25% off on orders above AED 100",
+    description: "25% off on orders above $100",
     startDate: "2023-03-01",
     endDate: "2023-12-31",
     isActive: true,
     usageLimit: 0,
     usageCount: 15,
     minOrderValue: 100,
+    image: "/placeholder.svg?height=155&width=312",
   },
 ]
 
@@ -115,7 +123,11 @@ export default function PromotionsPage() {
     usageLimit: 0,
     usageCount: 0,
     minOrderValue: 0,
+    image: "/placeholder.svg?height=155&width=312",
   })
+  const [imageError, setImageError] = useState("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const editFileInputRef = useRef<HTMLInputElement>(null)
 
   const handleAddPromotion = () => {
     const id = Math.max(...promotions.map((p) => p.id)) + 1
@@ -132,13 +144,16 @@ export default function PromotionsPage() {
       usageLimit: 0,
       usageCount: 0,
       minOrderValue: 0,
+      image: "/placeholder.svg?height=155&width=312",
     })
     setIsAddDialogOpen(false)
+    setImageError("")
   }
 
   const handleEditPromotion = () => {
     setPromotions(promotions.map((promotion) => (promotion.id === currentPromotion.id ? currentPromotion : promotion)))
     setIsEditDialogOpen(false)
+    setImageError("")
   }
 
   const handleDeletePromotion = () => {
@@ -152,6 +167,35 @@ export default function PromotionsPage() {
         promotion.id === id ? { ...promotion, isActive: !promotion.isActive } : promotion,
       ),
     )
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(img.src)
+      if (img.width !== 312 || img.height !== 155) {
+        setImageError("Image must be exactly 312x155 pixels")
+        return
+      }
+
+      setImageError("")
+      const imageUrl = URL.createObjectURL(file)
+
+      if (isEdit) {
+        setCurrentPromotion({ ...currentPromotion, image: imageUrl })
+      } else {
+        setNewPromotion({ ...newPromotion, image: imageUrl })
+      }
+    }
+
+    img.onerror = () => {
+      setImageError("Invalid image file")
+    }
+
+    img.src = URL.createObjectURL(file)
   }
 
   const getStatusBadge = (isActive: boolean) => {
@@ -181,119 +225,178 @@ export default function PromotionsPage() {
                 Add New Promotion
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Add New Promotion</DialogTitle>
                 <DialogDescription>Create a new discount or offer for your customers</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Promotion Name</Label>
-                    <Input
-                      id="name"
-                      value={newPromotion.name}
-                      onChange={(e) => setNewPromotion({ ...newPromotion, name: e.target.value })}
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Promotion Name</Label>
+                        <Input
+                          id="name"
+                          value={newPromotion.name}
+                          onChange={(e) => setNewPromotion({ ...newPromotion, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="code">Promo Code</Label>
+                        <Input
+                          id="code"
+                          value={newPromotion.code}
+                          onChange={(e) => setNewPromotion({ ...newPromotion, code: e.target.value.toUpperCase() })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="type">Discount Type</Label>
+                        <select
+                          id="type"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2"
+                          value={newPromotion.type}
+                          onChange={(e) => setNewPromotion({ ...newPromotion, type: e.target.value })}
+                        >
+                          <option value="percentage">Percentage (%)</option>
+                          <option value="fixed">Fixed Amount ($)</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="value">Discount Value</Label>
+                        <Input
+                          id="value"
+                          type="number"
+                          value={newPromotion.value}
+                          onChange={(e) =>
+                            setNewPromotion({ ...newPromotion, value: Number.parseFloat(e.target.value) })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={newPromotion.description}
+                        onChange={(e) => setNewPromotion({ ...newPromotion, description: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="startDate">Start Date</Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={newPromotion.startDate}
+                          onChange={(e) => setNewPromotion({ ...newPromotion, startDate: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="endDate">End Date</Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={newPromotion.endDate}
+                          onChange={(e) => setNewPromotion({ ...newPromotion, endDate: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="usageLimit">Usage Limit (0 for unlimited)</Label>
+                        <Input
+                          id="usageLimit"
+                          type="number"
+                          value={newPromotion.usageLimit}
+                          onChange={(e) =>
+                            setNewPromotion({ ...newPromotion, usageLimit: Number.parseInt(e.target.value) })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="minOrderValue">Minimum Order Value ($)</Label>
+                        <Input
+                          id="minOrderValue"
+                          type="number"
+                          value={newPromotion.minOrderValue}
+                          onChange={(e) =>
+                            setNewPromotion({ ...newPromotion, minOrderValue: Number.parseFloat(e.target.value) })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="active"
+                        checked={newPromotion.isActive}
+                        onCheckedChange={(checked) => setNewPromotion({ ...newPromotion, isActive: checked })}
+                      />
+                      <Label htmlFor="active">Active</Label>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="code">Promo Code</Label>
-                    <Input
-                      id="code"
-                      value={newPromotion.code}
-                      onChange={(e) => setNewPromotion({ ...newPromotion, code: e.target.value.toUpperCase() })}
-                    />
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="image">Promotion Image (312x155 pixels)</Label>
+                      <div className="border rounded-md p-4 space-y-4">
+                        <div className="aspect-[2/1] relative bg-gray-100 rounded-md overflow-hidden">
+                          <img
+                            src={newPromotion.image || "/placeholder.svg"}
+                            alt="Promotion preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          id="image"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageChange(e)}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                          Upload Image
+                        </Button>
+                        {imageError && (
+                          <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{imageError}</AlertDescription>
+                          </Alert>
+                        )}
+                        <p className="text-xs text-text-muted">
+                          Image must be exactly 312x155 pixels. This image will be displayed in the app.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Discount Type</Label>
-                    <select
-                      id="type"
-                      className="w-full rounded-md border border-input bg-background px-3 py-2"
-                      value={newPromotion.type}
-                      onChange={(e) => setNewPromotion({ ...newPromotion, type: e.target.value })}
-                    >
-                      <option value="percentage">Percentage (%)</option>
-                      <option value="fixed">Fixed Amount (AED)</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="value">Discount Value</Label>
-                    <Input
-                      id="value"
-                      type="number"
-                      value={newPromotion.value}
-                      onChange={(e) => setNewPromotion({ ...newPromotion, value: Number.parseFloat(e.target.value) })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={newPromotion.description}
-                    onChange={(e) => setNewPromotion({ ...newPromotion, description: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">Start Date</Label>
-                    <Input
-                      id="startDate"
-                      type="date"
-                      value={newPromotion.startDate}
-                      onChange={(e) => setNewPromotion({ ...newPromotion, startDate: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endDate">End Date</Label>
-                    <Input
-                      id="endDate"
-                      type="date"
-                      value={newPromotion.endDate}
-                      onChange={(e) => setNewPromotion({ ...newPromotion, endDate: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="usageLimit">Usage Limit (0 for unlimited)</Label>
-                    <Input
-                      id="usageLimit"
-                      type="number"
-                      value={newPromotion.usageLimit}
-                      onChange={(e) =>
-                        setNewPromotion({ ...newPromotion, usageLimit: Number.parseInt(e.target.value) })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="minOrderValue">Minimum Order Value (AED)</Label>
-                    <Input
-                      id="minOrderValue"
-                      type="number"
-                      value={newPromotion.minOrderValue}
-                      onChange={(e) =>
-                        setNewPromotion({ ...newPromotion, minOrderValue: Number.parseFloat(e.target.value) })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="active"
-                    checked={newPromotion.isActive}
-                    onCheckedChange={(checked) => setNewPromotion({ ...newPromotion, isActive: checked })}
-                  />
-                  <Label htmlFor="active">Active</Label>
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddDialogOpen(false)
+                    setImageError("")
+                  }}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleAddPromotion}>Add Promotion</Button>
+                <Button
+                  onClick={handleAddPromotion}
+                  disabled={!!imageError}
+                  className="bg-brand-primary hover:bg-brand-secondary"
+                >
+                  Add Promotion
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -318,9 +421,91 @@ export default function PromotionsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    {promotions
+                      .filter(
+                        (promotion) => tab === "all" || (tab === "active" ? promotion.isActive : !promotion.isActive),
+                      )
+                      .map((promotion) => (
+                        <Card key={promotion.id} className="overflow-hidden">
+                          <div className="relative">
+                            <img
+                              src={promotion.image || "/placeholder.svg"}
+                              alt={promotion.name}
+                              className="w-full h-[155px] object-cover"
+                            />
+                            <Badge
+                              className={`absolute top-2 right-2 ${
+                                promotion.isActive ? "bg-status-success text-white" : "bg-status-danger text-white"
+                              }`}
+                            >
+                              {promotion.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h3 className="font-semibold text-lg">{promotion.name}</h3>
+                                <Badge
+                                  variant="outline"
+                                  className="bg-bg-accent-light text-brand-primary border-brand-primary mt-1"
+                                >
+                                  {promotion.code}
+                                </Badge>
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setCurrentPromotion(promotion)
+                                      setIsEditDialogOpen(true)
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-status-danger"
+                                    onClick={() => {
+                                      setCurrentPromotion(promotion)
+                                      setIsDeleteDialogOpen(true)
+                                    }}
+                                  >
+                                    <Trash className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            <p className="text-sm text-text-muted mb-3">{promotion.description}</p>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <p className="text-text-muted">Discount:</p>
+                                <p className="font-medium">
+                                  {promotion.type === "percentage"
+                                    ? `${promotion.value}%`
+                                    : `$${promotion.value.toFixed(2)}`}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-text-muted">Valid until:</p>
+                                <p className="font-medium">{promotion.endDate}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Image</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Code</TableHead>
                         <TableHead>Discount</TableHead>
@@ -337,6 +522,15 @@ export default function PromotionsPage() {
                         )
                         .map((promotion) => (
                           <TableRow key={promotion.id}>
+                            <TableCell>
+                              <div className="w-16 h-8 rounded overflow-hidden">
+                                <img
+                                  src={promotion.image || "/placeholder.svg"}
+                                  alt={promotion.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </TableCell>
                             <TableCell className="font-medium">{promotion.name}</TableCell>
                             <TableCell>
                               <Badge
@@ -349,7 +543,7 @@ export default function PromotionsPage() {
                             <TableCell>
                               {promotion.type === "percentage"
                                 ? `${promotion.value}%`
-                                : `AED ${promotion.value.toFixed(2)}`}
+                                : `$${promotion.value.toFixed(2)}`}
                             </TableCell>
                             <TableCell>
                               <div className="text-sm">
@@ -412,123 +606,185 @@ export default function PromotionsPage() {
 
         {/* Edit Promotion Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Edit Promotion</DialogTitle>
               <DialogDescription>Update the details of this promotion</DialogDescription>
             </DialogHeader>
             {currentPromotion && (
               <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-name">Promotion Name</Label>
-                    <Input
-                      id="edit-name"
-                      value={currentPromotion.name}
-                      onChange={(e) => setCurrentPromotion({ ...currentPromotion, name: e.target.value })}
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-name">Promotion Name</Label>
+                        <Input
+                          id="edit-name"
+                          value={currentPromotion.name}
+                          onChange={(e) => setCurrentPromotion({ ...currentPromotion, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-code">Promo Code</Label>
+                        <Input
+                          id="edit-code"
+                          value={currentPromotion.code}
+                          onChange={(e) =>
+                            setCurrentPromotion({ ...currentPromotion, code: e.target.value.toUpperCase() })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-type">Discount Type</Label>
+                        <select
+                          id="edit-type"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2"
+                          value={currentPromotion.type}
+                          onChange={(e) => setCurrentPromotion({ ...currentPromotion, type: e.target.value })}
+                        >
+                          <option value="percentage">Percentage (%)</option>
+                          <option value="fixed">Fixed Amount ($)</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-value">Discount Value</Label>
+                        <Input
+                          id="edit-value"
+                          type="number"
+                          value={currentPromotion.value}
+                          onChange={(e) =>
+                            setCurrentPromotion({ ...currentPromotion, value: Number.parseFloat(e.target.value) })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-description">Description</Label>
+                      <Textarea
+                        id="edit-description"
+                        value={currentPromotion.description}
+                        onChange={(e) => setCurrentPromotion({ ...currentPromotion, description: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-startDate">Start Date</Label>
+                        <Input
+                          id="edit-startDate"
+                          type="date"
+                          value={currentPromotion.startDate}
+                          onChange={(e) => setCurrentPromotion({ ...currentPromotion, startDate: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-endDate">End Date</Label>
+                        <Input
+                          id="edit-endDate"
+                          type="date"
+                          value={currentPromotion.endDate}
+                          onChange={(e) => setCurrentPromotion({ ...currentPromotion, endDate: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-usageLimit">Usage Limit (0 for unlimited)</Label>
+                        <Input
+                          id="edit-usageLimit"
+                          type="number"
+                          value={currentPromotion.usageLimit}
+                          onChange={(e) =>
+                            setCurrentPromotion({ ...currentPromotion, usageLimit: Number.parseInt(e.target.value) })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-minOrderValue">Minimum Order Value ($)</Label>
+                        <Input
+                          id="edit-minOrderValue"
+                          type="number"
+                          value={currentPromotion.minOrderValue}
+                          onChange={(e) =>
+                            setCurrentPromotion({
+                              ...currentPromotion,
+                              minOrderValue: Number.parseFloat(e.target.value),
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="edit-active"
+                        checked={currentPromotion.isActive}
+                        onCheckedChange={(checked) => setCurrentPromotion({ ...currentPromotion, isActive: checked })}
+                      />
+                      <Label htmlFor="edit-active">Active</Label>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-code">Promo Code</Label>
-                    <Input
-                      id="edit-code"
-                      value={currentPromotion.code}
-                      onChange={(e) => setCurrentPromotion({ ...currentPromotion, code: e.target.value.toUpperCase() })}
-                    />
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-image">Promotion Image (312x155 pixels)</Label>
+                      <div className="border rounded-md p-4 space-y-4">
+                        <div className="aspect-[2/1] relative bg-gray-100 rounded-md overflow-hidden">
+                          <img
+                            src={currentPromotion.image || "/placeholder.svg"}
+                            alt="Promotion preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <input
+                          ref={editFileInputRef}
+                          type="file"
+                          id="edit-image"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageChange(e, true)}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => editFileInputRef.current?.click()}
+                        >
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                          Update Image
+                        </Button>
+                        {imageError && (
+                          <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{imageError}</AlertDescription>
+                          </Alert>
+                        )}
+                        <p className="text-xs text-text-muted">
+                          Image must be exactly 312x155 pixels. This image will be displayed in the app.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-type">Discount Type</Label>
-                    <select
-                      id="edit-type"
-                      className="w-full rounded-md border border-input bg-background px-3 py-2"
-                      value={currentPromotion.type}
-                      onChange={(e) => setCurrentPromotion({ ...currentPromotion, type: e.target.value })}
-                    >
-                      <option value="percentage">Percentage (%)</option>
-                      <option value="fixed">Fixed Amount (AED)</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-value">Discount Value</Label>
-                    <Input
-                      id="edit-value"
-                      type="number"
-                      value={currentPromotion.value}
-                      onChange={(e) =>
-                        setCurrentPromotion({ ...currentPromotion, value: Number.parseFloat(e.target.value) })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-description">Description</Label>
-                  <Textarea
-                    id="edit-description"
-                    value={currentPromotion.description}
-                    onChange={(e) => setCurrentPromotion({ ...currentPromotion, description: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-startDate">Start Date</Label>
-                    <Input
-                      id="edit-startDate"
-                      type="date"
-                      value={currentPromotion.startDate}
-                      onChange={(e) => setCurrentPromotion({ ...currentPromotion, startDate: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-endDate">End Date</Label>
-                    <Input
-                      id="edit-endDate"
-                      type="date"
-                      value={currentPromotion.endDate}
-                      onChange={(e) => setCurrentPromotion({ ...currentPromotion, endDate: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-usageLimit">Usage Limit (0 for unlimited)</Label>
-                    <Input
-                      id="edit-usageLimit"
-                      type="number"
-                      value={currentPromotion.usageLimit}
-                      onChange={(e) =>
-                        setCurrentPromotion({ ...currentPromotion, usageLimit: Number.parseInt(e.target.value) })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-minOrderValue">Minimum Order Value (AED)</Label>
-                    <Input
-                      id="edit-minOrderValue"
-                      type="number"
-                      value={currentPromotion.minOrderValue}
-                      onChange={(e) =>
-                        setCurrentPromotion({ ...currentPromotion, minOrderValue: Number.parseFloat(e.target.value) })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="edit-active"
-                    checked={currentPromotion.isActive}
-                    onCheckedChange={(checked) => setCurrentPromotion({ ...currentPromotion, isActive: checked })}
-                  />
-                  <Label htmlFor="edit-active">Active</Label>
                 </div>
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsEditDialogOpen(false)
+                  setImageError("")
+                }}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleEditPromotion}>Save Changes</Button>
+              <Button
+                onClick={handleEditPromotion}
+                disabled={!!imageError}
+                className="bg-brand-primary hover:bg-brand-secondary"
+              >
+                Save Changes
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -544,13 +800,24 @@ export default function PromotionsPage() {
             </DialogHeader>
             {currentPromotion && (
               <div className="py-4">
-                <p className="font-medium">{currentPromotion.name}</p>
-                <p className="text-text-muted">Code: {currentPromotion.code}</p>
-                <p className="text-text-muted">
-                  {currentPromotion.type === "percentage"
-                    ? `${currentPromotion.value}% off`
-                    : `AED ${currentPromotion.value.toFixed(2)} off`}
-                </p>
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-8 rounded overflow-hidden">
+                    <img
+                      src={currentPromotion.image || "/placeholder.svg"}
+                      alt={currentPromotion.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <p className="font-medium">{currentPromotion.name}</p>
+                    <p className="text-text-muted">Code: {currentPromotion.code}</p>
+                    <p className="text-text-muted">
+                      {currentPromotion.type === "percentage"
+                        ? `${currentPromotion.value}% off`
+                        : `$${currentPromotion.value.toFixed(2)} off`}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
             <DialogFooter>
