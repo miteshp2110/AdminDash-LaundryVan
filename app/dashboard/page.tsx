@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -7,6 +8,85 @@ import { BarChart, LineChart } from "@/components/charts"
 import { ShoppingCart, Users, Truck, Package, ArrowUp, ArrowDown, DollarSign, Calendar } from "lucide-react"
 
 export default function DashboardPage() {
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalUsers, setTotalUsers]= useState(0);
+  const [activeDrivers, setActiveDrivers] = useState(0);
+  const [revenue, setRevenue] = useState(0);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/admin/orders") 
+        const data = await res.json()
+        if (data.success) {
+          setTotalOrders(data.data.length)
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+      }
+    }
+    const fetchTotalUsers = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/admin/total-users");
+        const data = await res.json();
+        console.log(data); // Verify the response
+    
+        // Use 'total_users' instead of 'totalUsers'
+        if (data.success) {
+          setTotalUsers(data.total_users);
+        }
+      } catch (error) {
+        console.error("Error fetching total users:", error);
+      }
+    };
+
+    const fetchActiveDrivers = async () => {
+      try {
+        const res= await fetch("http://localhost:5000/admin/active-drivers")
+        const data = await res.json()
+        if (data.success) {
+          setActiveDrivers(data.data.length)
+        }
+      } catch (error) {
+        console.error("Error fetching active drivers:", error)
+      }
+    }
+
+    const fetchRevenue = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/admin/orders-total-revenue")
+        const data = await res.json()
+        console.log(data); // Verify the response
+        if (data.success) {
+          setRevenue(data.totalRevenue)
+        }
+      } catch (error) {
+        console.error("Error fetching revenue:", error)
+      }
+    }
+    const fetchRecentOrders = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/admin/orders-recent");
+        const data = await res.json();
+        setRecentOrders(data.recentOrders);
+      } catch (err) {
+        console.error("Failed to fetch recent orders", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentOrders();
+    
+
+    fetchOrders()
+    fetchTotalUsers()
+    fetchActiveDrivers()
+    fetchRevenue()
+  }, [])
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -21,7 +101,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-text-muted text-sm">Total Orders</p>
-                  <h3 className="text-2xl font-bold text-text-dark mt-1">1,284</h3>
+                  <h3 className="text-2xl font-bold text-text-dark mt-1">{totalOrders}</h3>
                   <div className="flex items-center mt-1 text-status-success text-sm">
                     <ArrowUp className="h-4 w-4 mr-1" />
                     <span>12.5%</span>
@@ -34,12 +114,15 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
+          {/* Static Cards: You can make them dynamic later too */}
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-text-muted text-sm">Active Users</p>
-                  <h3 className="text-2xl font-bold text-text-dark mt-1">843</h3>
+                  <p className="text-text-muted text-sm">Total Users</p>
+                  <h3 className="text-2xl font-bold text-text-dark mt-1">
+                    {totalUsers !== 0 ? totalUsers : 'Loading...'}
+                  </h3>
                   <div className="flex items-center mt-1 text-status-success text-sm">
                     <ArrowUp className="h-4 w-4 mr-1" />
                     <span>8.2%</span>
@@ -57,7 +140,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-text-muted text-sm">Active Drivers</p>
-                  <h3 className="text-2xl font-bold text-text-dark mt-1">32</h3>
+                  <h3 className="text-2xl font-bold text-text-dark mt-1">{activeDrivers}</h3>
                   <div className="flex items-center mt-1 text-status-danger text-sm">
                     <ArrowDown className="h-4 w-4 mr-1" />
                     <span>3.1%</span>
@@ -75,7 +158,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-text-muted text-sm">Revenue</p>
-                  <h3 className="text-2xl font-bold text-text-dark mt-1">AED 24,389</h3>
+                  <h3 className="text-2xl font-bold text-text-dark mt-1">AED {revenue}</h3>
                   <div className="flex items-center mt-1 text-status-success text-sm">
                     <ArrowUp className="h-4 w-4 mr-1" />
                     <span>18.3%</span>
@@ -95,6 +178,7 @@ export default function DashboardPage() {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
+
           <TabsContent value="overview" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <Card className="lg:col-span-4">
@@ -106,6 +190,7 @@ export default function DashboardPage() {
                   <LineChart />
                 </CardContent>
               </Card>
+
               <Card className="lg:col-span-3">
                 <CardHeader>
                   <CardTitle>Service Distribution</CardTitle>
@@ -116,6 +201,7 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             </div>
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card className="lg:col-span-2">
                 <CardHeader>
@@ -147,6 +233,7 @@ export default function DashboardPage() {
                   </div>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardHeader>
                   <CardTitle>Upcoming Pickups</CardTitle>
@@ -178,6 +265,7 @@ export default function DashboardPage() {
               </Card>
             </div>
           </TabsContent>
+
           <TabsContent value="analytics" className="space-y-4">
             <Card>
               <CardHeader>
@@ -191,6 +279,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
           <TabsContent value="reports" className="space-y-4">
             <Card>
               <CardHeader>
