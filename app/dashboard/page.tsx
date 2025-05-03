@@ -12,8 +12,21 @@ export default function DashboardPage() {
   const [totalUsers, setTotalUsers]= useState(0);
   const [activeDrivers, setActiveDrivers] = useState(0);
   const [revenue, setRevenue] = useState(0);
-  const [recentOrders, setRecentOrders] = useState([]);
+  interface Order {
+    order_id: string;
+    categories: string;
+    amount: number;
+    timestamp: string;
+  }
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  interface Pickup {
+    id: string;
+    customer_name: string;
+    pickup_date: string;
+    status: string;
+  }
+  const [pickups, setPickups] = useState<Pickup[]>([]);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -70,17 +83,35 @@ export default function DashboardPage() {
       try {
         const res = await fetch("http://localhost:5000/admin/orders-recent");
         const data = await res.json();
-        setRecentOrders(data.recentOrders);
+        if (data.success) {
+          setRecentOrders(data.recentOrders);
+          console.log(data.recentOrders); // Verify the response
+          setLoading(false); // Set loading to false after fetching data
+        } else {
+          console.error("Failed to fetch recent orders");
+        }
       } catch (err) {
-        console.error("Failed to fetch recent orders", err);
+        console.error("Error fetching recent orders:", err);
+      }
+    };
+    const fetchPickups = async () => {
+      try {
+        const response = await fetch("/api/admin/todays-pickups"); // Replace with your actual API path
+        const data = await response.json();
+        if (data.success) {
+          setPickups(data.todaysPickups);
+        } else {
+          console.error("Failed to fetch pickups:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching today's pickups:", error);
       } finally {
         setLoading(false);
       }
     };
 
+    fetchPickups();
     fetchRecentOrders();
-    
-
     fetchOrders()
     fetchTotalUsers()
     fetchActiveDrivers()
@@ -203,16 +234,16 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle>Recent Orders</CardTitle>
                   <CardDescription>Latest orders from customers</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {[1, 2, 3, 4, 5].map((i) => (
+                    {recentOrders.map((order) => (
                       <div
-                        key={i}
+                        key={order.order_id}
                         className="flex items-center justify-between border-b border-line-light pb-4 last:border-0 last:pb-0"
                       >
                         <div className="flex items-center">
@@ -220,13 +251,13 @@ export default function DashboardPage() {
                             <Package className="h-5 w-5 text-brand-primary" />
                           </div>
                           <div>
-                            <p className="font-medium text-text-dark">Order #{10000 + i}</p>
-                            <p className="text-sm text-text-muted">Wash & Fold - 5kg</p>
+                            <p className="font-medium text-text-dark">Order #{order.order_id}</p>
+                            <p className="text-sm text-text-muted">{order.categories}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-text-dark">AED 24.99</p>
-                          <p className="text-sm text-text-muted">2 hours ago</p>
+                          <p className="font-medium text-text-dark">AED {order.amount}</p>
+                          <p className="text-sm text-text-muted">{order.timestamp}</p>
                         </div>
                       </div>
                     ))}
@@ -235,34 +266,49 @@ export default function DashboardPage() {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Upcoming Pickups</CardTitle>
-                  <CardDescription>Scheduled for today</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between border-b border-line-light pb-4 last:border-0 last:pb-0"
-                      >
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-bg-light flex items-center justify-center mr-3">
-                            <Calendar className="h-5 w-5 text-brand-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-text-dark">John Doe</p>
-                            <p className="text-sm text-text-muted">2:30 PM</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-status-success">Confirmed</p>
-                        </div>
-                      </div>
-                    ))}
+      <CardHeader>
+        <CardTitle>Upcoming Pickups</CardTitle>
+        <CardDescription>Scheduled for today</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {loading ? (
+            <p>Loading...</p>
+          ) : pickups.length === 0 ? (
+            <p className="text-text-muted">No pickups scheduled for today.</p>
+          ) : (
+            pickups.map((order) => (
+              <div
+                key={order.id}
+                className="flex items-center justify-between border-b border-line-light pb-4 last:border-0 last:pb-0"
+              >
+                <div className="flex items-center">
+                  <div className="h-10 w-10 rounded-full bg-bg-light flex items-center justify-center mr-3">
+                    <Calendar className="h-5 w-5 text-brand-primary" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <p className="font-medium text-text-dark">
+                      {order.customer_name || "Unknown"}
+                    </p>
+                    <p className="text-sm text-text-muted">
+                      {new Date(order.pickup_date).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-status-success">
+                    {order.status || "Confirmed"}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
             </div>
           </TabsContent>
 
