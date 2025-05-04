@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import {useEffect, useState} from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,161 +19,111 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MoreVertical, Eye, Edit, XCircle, Truck, Search, Calendar, MapPin, Package, User } from "lucide-react"
+import {Property} from "csstype";
+import Order = Property.Order;
 
-// Sample order data
-const initialOrders = [
-  {
-    id: "ORD-10001",
-    customer: "John Doe",
-    service: "Wash & Fold",
-    amount: 24.99,
-    status: "pending",
-    date: "2023-04-10",
-    time: "10:30 AM",
-    address: "123 Main St, Apt 4B, New York, NY 10001",
-    phone: "+1 (555) 123-4567",
-    items: [
-      { name: "T-shirts", quantity: 5 },
-      { name: "Pants", quantity: 3 },
-      { name: "Bed sheets", quantity: 2 },
-    ],
-    driver: null,
-  },
-  {
-    id: "ORD-10002",
-    customer: "Jane Smith",
-    service: "Dry Cleaning",
-    amount: 39.99,
-    status: "processing",
-    date: "2023-04-10",
-    time: "11:45 AM",
-    address: "456 Park Ave, Suite 7C, New York, NY 10022",
-    phone: "+1 (555) 987-6543",
-    items: [
-      { name: "Suits", quantity: 2 },
-      { name: "Dresses", quantity: 1 },
-    ],
-    driver: "Michael Johnson",
-  },
-  {
-    id: "ORD-10003",
-    customer: "Robert Brown",
-    service: "Ironing",
-    amount: 19.99,
-    status: "completed",
-    date: "2023-04-09",
-    time: "2:15 PM",
-    address: "789 Broadway, Apt 12D, New York, NY 10003",
-    phone: "+1 (555) 456-7890",
-    items: [
-      { name: "Shirts", quantity: 8 },
-      { name: "Pants", quantity: 4 },
-    ],
-    driver: "Sarah Williams",
-  },
-  {
-    id: "ORD-10004",
-    customer: "Emily Davis",
-    service: "Express Service",
-    amount: 34.99,
-    status: "delivered",
-    date: "2023-04-09",
-    time: "9:00 AM",
-    address: "321 5th Ave, Apt 15F, New York, NY 10016",
-    phone: "+1 (555) 789-0123",
-    items: [
-      { name: "T-shirts", quantity: 3 },
-      { name: "Jeans", quantity: 2 },
-      { name: "Towels", quantity: 4 },
-    ],
-    driver: "David Miller",
-  },
-  {
-    id: "ORD-10005",
-    customer: "Michael Wilson",
-    service: "Stain Removal",
-    amount: 14.99,
-    status: "cancelled",
-    date: "2023-04-08",
-    time: "3:30 PM",
-    address: "654 Madison Ave, Apt 8B, New York, NY 10021",
-    phone: "+1 (555) 234-5678",
-    items: [
-      { name: "Tablecloth", quantity: 1 },
-      { name: "Shirts", quantity: 2 },
-    ],
-    driver: null,
-  },
-]
-
-// Sample drivers
-const drivers = [
-  { id: 1, name: "David Miller", status: "available" },
-  { id: 2, name: "Sarah Williams", status: "busy" },
-  { id: 3, name: "Michael Johnson", status: "available" },
-  { id: 4, name: "Jessica Thompson", status: "available" },
-]
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState(initialOrders)
+  interface OrderItem {
+    name: string
+    quantity: number
+  }
+
+  interface Order {
+    id: string
+    customer: string
+    service: string
+    amount: number
+    status: string
+    date: string
+    time: string
+    address: string
+    phone: string
+    driver: string
+    items: OrderItem[]
+  }
+  // const initialOrders : [Order]   = [
+  //   {
+  //     "id": "ORD-00010",
+  //     "customer": "Mitesh Paliwal",
+  //     "service": "Wash & Iron",
+  //     "amount": 72,
+  //     "status": "delivered",
+  //     "date": "2025-04-25",
+  //     "time": "10:00 AM",
+  //     "address": "12 Mall Area, Opposite To Mall, Jayamahal Road,Begaluru",
+  //     "phone": "7000320733",
+  //     "driver": "KA 07 AB 1234",
+  //     "items": [
+  //       {
+  //         "name": "Jeans (Wash & Iron)",
+  //         "quantity": 1
+  //       },
+  //       {
+  //         "name": "Pants (Iron)",
+  //         "quantity": 2
+  //       },
+  //       {
+  //         "name": "Pyjama Top (Wash)",
+  //         "quantity": 4
+  //       }
+  //     ]
+  //   }
+  // ]
+  const [orders, setOrders] = useState<Order[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false)
-  const [isAssignDriverDialogOpen, setIsAssignDriverDialogOpen] = useState(false)
   const [currentOrder, setCurrentOrder] = useState<any>(null)
-  const [selectedDriver, setSelectedDriver] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/admin/orders/detail")
+        const data = await res.json()
+        if (data.success) {
+          setOrders(data.data)
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+      }
+    }
+    fetchOrders()
+  }, []);
+
 
   const filteredOrders = orders.filter(
     (order) =>
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const handleCancelOrder = () => {
-    setOrders(orders.map((order) => (order.id === currentOrder.id ? { ...order, status: "cancelled" } : order)))
-    setIsCancelDialogOpen(false)
-  }
 
-  const handleAssignDriver = () => {
-    setOrders(
-      orders.map((order) =>
-        order.id === currentOrder.id ? { ...order, driver: selectedDriver, status: "processing" } : order,
-      ),
-    )
-    setIsAssignDriverDialogOpen(false)
-  }
 
   const getStatusBadge = (status: string) => {
+    // console.log(status)
     switch (status) {
-      case "pending":
+      case "orderplaced":
         return (
           <Badge variant="outline" className="bg-chart-yellow/20 text-chart-yellow border-chart-yellow">
-            Pending
+            Placed
           </Badge>
         )
-      case "processing":
+      case "orderpickedup":
         return (
           <Badge variant="outline" className="bg-chart-blue/20 text-chart-teal border-chart-teal">
-            Processing
+            Picked Up
           </Badge>
         )
-      case "completed":
+      case "outfordelivery":
         return (
           <Badge variant="outline" className="bg-chart-green/20 text-status-success border-status-success">
-            Completed
+            Out For Delivery
           </Badge>
         )
       case "delivered":
         return (
           <Badge variant="outline" className="bg-chart-purple/20 text-chart-purple border-chart-purple">
             Delivered
-          </Badge>
-        )
-      case "cancelled":
-        return (
-          <Badge variant="outline" className="bg-status-danger/20 text-status-danger border-status-danger">
-            Cancelled
           </Badge>
         )
       default:
@@ -203,14 +153,13 @@ export default function OrdersPage() {
         <Tabs defaultValue="all" className="space-y-4">
           <TabsList>
             <TabsTrigger value="all">All Orders</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="processing">Processing</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="orderplaced">Order Placed</TabsTrigger>
+            <TabsTrigger value="orderpickedup">Picked Up</TabsTrigger>
+            <TabsTrigger value="outfordelivery">Out For Delivery</TabsTrigger>
             <TabsTrigger value="delivered">Delivered</TabsTrigger>
-            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
           </TabsList>
 
-          {["all", "pending", "processing", "completed", "delivered", "cancelled"].map((tab) => (
+          {["all", "orderplaced", "orderpickedup", "outfordelivery", "delivered"].map((tab) => (
             <TabsContent key={tab} value={tab}>
               <Card>
                 <CardHeader>
@@ -229,7 +178,7 @@ export default function OrdersPage() {
                         <TableHead>Amount</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Driver</TableHead>
+                        <TableHead>Van Num</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -262,41 +211,6 @@ export default function OrdersPage() {
                                     <Eye className="h-4 w-4 mr-2" />
                                     View Details
                                   </DropdownMenuItem>
-                                  {order.status !== "cancelled" && order.status !== "delivered" && (
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setCurrentOrder(order)
-                                        setIsEditDialogOpen(true)
-                                      }}
-                                    >
-                                      <Edit className="h-4 w-4 mr-2" />
-                                      Edit Order
-                                    </DropdownMenuItem>
-                                  )}
-                                  {(order.status === "pending" || order.status === "processing") && (
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setCurrentOrder(order)
-                                        setIsCancelDialogOpen(true)
-                                      }}
-                                      className="text-status-danger"
-                                    >
-                                      <XCircle className="h-4 w-4 mr-2" />
-                                      Cancel Order
-                                    </DropdownMenuItem>
-                                  )}
-                                  {order.status === "pending" && (
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setCurrentOrder(order)
-                                        setSelectedDriver(null)
-                                        setIsAssignDriverDialogOpen(true)
-                                      }}
-                                    >
-                                      <Truck className="h-4 w-4 mr-2" />
-                                      Assign Driver
-                                    </DropdownMenuItem>
-                                  )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </TableCell>
@@ -337,7 +251,7 @@ export default function OrdersPage() {
                     <Package className="h-5 w-5 text-brand-primary mt-0.5" />
                     <div>
                       <p className="font-medium">{currentOrder.service}</p>
-                      <p className="text-sm text-text-muted">${currentOrder.amount.toFixed(2)}</p>
+                      <p className="text-sm text-text-muted">AED {currentOrder.amount.toFixed(2)}</p>
                     </div>
                   </div>
 
@@ -377,157 +291,6 @@ export default function OrdersPage() {
             )}
             <DialogFooter>
               <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Order Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Order</DialogTitle>
-              <DialogDescription>Update the details of this order</DialogDescription>
-            </DialogHeader>
-            {currentOrder && (
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-date">Pickup Date</Label>
-                    <Input
-                      id="edit-date"
-                      type="date"
-                      value={currentOrder.date}
-                      onChange={(e) => setCurrentOrder({ ...currentOrder, date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-time">Pickup Time</Label>
-                    <Input
-                      id="edit-time"
-                      type="time"
-                      value={currentOrder.time.split(" ")[0]}
-                      onChange={(e) => {
-                        const time = e.target.value
-                        const hours = Number.parseInt(time.split(":")[0])
-                        const minutes = time.split(":")[1]
-                        const ampm = hours >= 12 ? "PM" : "AM"
-                        const formattedHours = hours % 12 || 12
-                        const formattedTime = `${formattedHours}:${minutes} ${ampm}`
-                        setCurrentOrder({ ...currentOrder, time: formattedTime })
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-address">Address</Label>
-                  <Input
-                    id="edit-address"
-                    value={currentOrder.address}
-                    onChange={(e) => setCurrentOrder({ ...currentOrder, address: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-phone">Phone</Label>
-                  <Input
-                    id="edit-phone"
-                    value={currentOrder.phone}
-                    onChange={(e) => setCurrentOrder({ ...currentOrder, phone: e.target.value })}
-                  />
-                </div>
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  setOrders(orders.map((order) => (order.id === currentOrder.id ? currentOrder : order)))
-                  setIsEditDialogOpen(false)
-                }}
-              >
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Cancel Order Dialog */}
-        <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Cancel Order</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to cancel this order? This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            {currentOrder && (
-              <div className="py-4">
-                <p className="font-medium">
-                  {currentOrder.id} - {currentOrder.customer}
-                </p>
-                <p className="text-text-muted">
-                  {currentOrder.service} - ${currentOrder.amount.toFixed(2)}
-                </p>
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCancelDialogOpen(false)}>
-                No, Keep Order
-              </Button>
-              <Button variant="destructive" onClick={handleCancelOrder}>
-                Yes, Cancel Order
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Assign Driver Dialog */}
-        <Dialog open={isAssignDriverDialogOpen} onOpenChange={setIsAssignDriverDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Assign Driver</DialogTitle>
-              <DialogDescription>Select a driver to assign to this order</DialogDescription>
-            </DialogHeader>
-            {currentOrder && (
-              <div className="space-y-4 py-4">
-                <div className="mb-4">
-                  <p className="font-medium">
-                    {currentOrder.id} - {currentOrder.customer}
-                  </p>
-                  <p className="text-text-muted">
-                    {currentOrder.service} - ${currentOrder.amount.toFixed(2)}
-                  </p>
-                  <p className="text-text-muted mt-1">{currentOrder.address}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="driver">Select Driver</Label>
-                  <select
-                    id="driver"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2"
-                    value={selectedDriver || ""}
-                    onChange={(e) => setSelectedDriver(e.target.value)}
-                  >
-                    <option value="">Select a driver</option>
-                    {drivers
-                      .filter((driver) => driver.status === "available")
-                      .map((driver) => (
-                        <option key={driver.id} value={driver.name}>
-                          {driver.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAssignDriverDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAssignDriver} disabled={!selectedDriver}>
-                Assign Driver
-              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
