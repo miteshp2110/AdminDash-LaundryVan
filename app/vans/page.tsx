@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import {useEffect, useState} from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,124 +26,257 @@ import { MoreVertical, Plus, Edit, Trash, Search } from "lucide-react"
 const initialVans = [
   {
     id: 1,
-    vanId: "VAN-001",
     regionId: 1,
     regionName: "Manhattan",
     regNo: "NY-12345",
     status: "active",
+    phone : "1234567890"
   },
   {
     id: 2,
-    vanId: "VAN-002",
     regionId: 2,
     regionName: "Brooklyn",
     regNo: "NY-67890",
     status: "active",
+    phone : "1234567890"
   },
   {
     id: 3,
-    vanId: "VAN-003",
     regionId: 3,
     regionName: "Queens",
     regNo: "NY-54321",
     status: "active",
+    phone : "1234567890"
   },
   {
     id: 4,
-    vanId: "VAN-004",
+
     regionId: 4,
     regionName: "Bronx",
     regNo: "NY-13579",
     status: "inactive",
+    phone : "1234567890"
   },
   {
     id: 5,
-    vanId: "VAN-005",
     regionId: 5,
     regionName: "Staten Island",
     regNo: "NY-24680",
     status: "inactive",
+    phone : "1234567890"
   },
 ]
 
 // Sample regions for dropdown
-const regions = [
-  { id: 1, name: "Manhattan" },
-  { id: 2, name: "Brooklyn" },
-  { id: 3, name: "Queens" },
-  { id: 4, name: "Bronx" },
-  { id: 5, name: "Staten Island" },
-]
 
 export default function VansPage() {
-  const [vans, setVans] = useState(initialVans)
+  interface Region{
+    id: number,
+    name : string
+  }
+  interface Van{
+    id: number,
+    regionId: number,
+    regionName: string,
+    regNo: string,
+    status: string,
+    phone : string
+
+  }
+  const [vans, setVans] = useState<Van[]>([])
+  const [regions, setRegions] = useState<Region[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [currentVan, setCurrentVan] = useState<any>(null)
   const [newVan, setNewVan] = useState({
     vanId: "",
     regionId: 0,
     regNo: "",
     status: "active",
+    phone : ""
   })
+
+
+
+  useEffect(() => {
+    const fetchRegions = async()=>{
+      try {
+        const res = await fetch("http://localhost:5000/admin/regions")
+        const data = await res.json()
+        if (data.success) {
+          setRegions(data.data)
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+      }
+    }
+    const fetchVans = async()=>{
+      try {
+        const res = await fetch("http://localhost:5000/admin/drivers")
+        const data = await res.json()
+        if (data.success) {
+          setVans(data.data)
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+      }
+    }
+    fetchRegions()
+    fetchVans()
+  }, []);
 
   const filteredVans = vans.filter(
     (van) =>
-      van.vanId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       van.regNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       van.regionName.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const handleAddVan = () => {
-    const id = Math.max(...vans.map((d) => d.id)) + 1
-    const selectedRegion = regions.find((r) => r.id === Number(newVan.regionId))
-    setVans([
-      ...vans,
-      {
-        ...newVan,
-        id,
-        regionId: Number(newVan.regionId),
-        regionName: selectedRegion ? selectedRegion.name : "Unknown",
-      },
-    ])
-    setNewVan({
-      vanId: "",
-      regionId: 0,
-      regNo: "",
-      status: "active",
-    })
+  async function  addVan(){
+    try{
+      const res = await fetch(`http://localhost:5000/admin/addDriver`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any auth headers here if needed
+        },
+        body: JSON.stringify({
+          region_id : newVan.regionId,
+          van_number : newVan.regNo,
+          phone : newVan.vanId,
+          status : newVan.status,
+        })
+      })
+      const data = await res.json()
+      return !!data.success;
+    }
+    catch(error){
+      console.log(error)
+      return false
+    }
+  }
+
+  async function toggleStatus(id: number,status : string) {
+    const newStatus = status !== "active"
+    try{
+      const res = await fetch(`http://localhost:5000/admin/drivers/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any auth headers here if needed
+        },
+        body: JSON.stringify({
+          status: newStatus
+        })
+      })
+      const data = await res.json()
+      return !!data.success;
+    }
+    catch (error) {
+      console.log(error)
+      return false
+    }
+
+  }
+
+  async function updateVan() {
+    console.log(currentVan.id,currentVan.phone,currentVan.regionId)
+    try{
+      const res = await fetch(`http://localhost:5000/admin/updateDriver/${currentVan.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any auth headers here if needed
+        },
+        body: JSON.stringify({
+          status : currentVan.status === "active"?1:0,
+          phone : currentVan.phone,
+          regNo : currentVan.regNo,
+          regionId : currentVan.regionId
+        })
+      })
+      const data = await res.json()
+      return !!data.success;
+    }
+    catch (error) {
+      console.log(error)
+      return false
+    }
+
+  }
+
+  const handleAddVan = async () => {
+    if(newVan.regNo === "" || newVan.vanId === "" || newVan.regionId === 0){
+      alert("Please enter all Details")
+      return
+    }
+    if(await addVan()){
+      const id = Math.max(...vans.map((d) => d.id)) + 1
+      const selectedRegion = regions.find((r) => r.id === Number(newVan.regionId))
+      setVans([
+        ...vans,
+        {
+          ...newVan,
+          id,
+          regionId: Number(newVan.regionId),
+          regionName: selectedRegion ? selectedRegion.name : "Unknown",
+          phone: newVan.vanId
+        },
+      ])
+      setNewVan({
+        vanId: "",
+        regionId: 0,
+        regNo: "",
+        status: "active",
+        phone: ""
+      })
+    }
+    else{
+      alert("Failed to Add Van")
+    }
     setIsAddDialogOpen(false)
   }
 
-  const handleEditVan = () => {
-    const selectedRegion = regions.find((r) => r.id === Number(currentVan.regionId))
-    const updatedVan = {
-      ...currentVan,
-      regionId: Number(currentVan.regionId),
-      regionName: selectedRegion ? selectedRegion.name : "Unknown",
+  const handleEditVan = async() => {
+    if(!currentVan.phone || !currentVan.regionId || !currentVan.regNo){
+      alert("Please enter all Details")
+      return
     }
-    setVans(vans.map((van) => (van.id === currentVan.id ? updatedVan : van)))
+    if(await updateVan()){
+      const selectedRegion = regions.find((r) => r.id === Number(currentVan.regionId))
+      const updatedVan = {
+        ...currentVan,
+        regionId: Number(currentVan.regionId),
+        regionName: selectedRegion ? selectedRegion.name : "Unknown",
+      }
+      setVans(vans.map((van) => (van.id === currentVan.id ? updatedVan : van)))
+
+    }
+    else{
+      alert("Failed to update Van")
+    }
     setIsEditDialogOpen(false)
   }
 
-  const handleDeleteVan = () => {
-    setVans(vans.filter((van) => van.id !== currentVan.id))
-    setIsDeleteDialogOpen(false)
-  }
 
-  const handleToggleStatus = (id: number) => {
-    setVans(
-      vans.map((van) =>
-        van.id === id
-          ? {
-              ...van,
-              status: van.status === "active" ? "inactive" : "active",
-            }
-          : van,
-      ),
-    )
+
+  const handleToggleStatus = async (id: number,status:string) => {
+    if(await toggleStatus(id,status)){
+      setVans(
+          vans.map((van) =>
+              van.id === id
+                  ? {
+                    ...van,
+                    status: van.status === "active" ? "inactive" : "active",
+                  }
+                  : van,
+          ),
+      )
+    }
+    else{
+      alert("Failed to Update Status")
+    }
+
   }
 
   const getStatusBadge = (status: string) => {
@@ -191,7 +324,7 @@ export default function VansPage() {
                 <div className="space-y-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="vanId">Van ID</Label>
+                      <Label htmlFor="vanId">Phone</Label>
                       <Input
                         id="vanId"
                         value={newVan.vanId}
@@ -268,6 +401,7 @@ export default function VansPage() {
                         <TableHead>Van ID</TableHead>
                         <TableHead>Registration No</TableHead>
                         <TableHead>Region</TableHead>
+                        <TableHead>Phone</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -277,14 +411,15 @@ export default function VansPage() {
                         .filter((van) => tab === "all" || van.status === tab)
                         .map((van) => (
                           <TableRow key={van.id}>
-                            <TableCell className="font-medium">{van.vanId}</TableCell>
+                            <TableCell className="font-medium">{van.id}</TableCell>
                             <TableCell>{van.regNo}</TableCell>
                             <TableCell>{van.regionName}</TableCell>
+                            <TableCell>{van.phone}</TableCell>
                             <TableCell>
                               <div className="flex items-center space-x-2">
                                 <Switch
                                   checked={van.status === "active"}
-                                  onCheckedChange={() => handleToggleStatus(van.id)}
+                                  onCheckedChange={() => handleToggleStatus(van.id,van.status)}
                                 />
                                 {getStatusBadge(van.status)}
                               </div>
@@ -305,16 +440,6 @@ export default function VansPage() {
                                   >
                                     <Edit className="h-4 w-4 mr-2" />
                                     Edit Van
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-status-danger"
-                                    onClick={() => {
-                                      setCurrentVan(van)
-                                      setIsDeleteDialogOpen(true)
-                                    }}
-                                  >
-                                    <Trash className="h-4 w-4 mr-2" />
-                                    Delete Van
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -340,11 +465,11 @@ export default function VansPage() {
               <div className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-vanId">Van ID</Label>
+                    <Label htmlFor="edit-phone">Phone</Label>
                     <Input
-                      id="edit-vanId"
-                      value={currentVan.vanId}
-                      onChange={(e) => setCurrentVan({ ...currentVan, vanId: e.target.value })}
+                      id="edit-phone"
+                      value={currentVan.phone}
+                      onChange={(e) => setCurrentVan({ ...currentVan, phone: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -389,33 +514,6 @@ export default function VansPage() {
               </Button>
               <Button onClick={handleEditVan} className="bg-brand-primary hover:bg-brand-secondary">
                 Save Changes
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Van Dialog */}
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Van</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete this van? This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            {currentVan && (
-              <div className="py-4">
-                <p className="font-medium">{currentVan.vanId}</p>
-                <p className="text-text-muted">Registration: {currentVan.regNo}</p>
-                <p className="text-text-muted">Region: {currentVan.regionName}</p>
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleDeleteVan}>
-                Delete
               </Button>
             </DialogFooter>
           </DialogContent>

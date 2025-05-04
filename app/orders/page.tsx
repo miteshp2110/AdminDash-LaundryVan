@@ -42,34 +42,7 @@ export default function OrdersPage() {
     driver: string
     items: OrderItem[]
   }
-  // const initialOrders : [Order]   = [
-  //   {
-  //     "id": "ORD-00010",
-  //     "customer": "Mitesh Paliwal",
-  //     "service": "Wash & Iron",
-  //     "amount": 72,
-  //     "status": "delivered",
-  //     "date": "2025-04-25",
-  //     "time": "10:00 AM",
-  //     "address": "12 Mall Area, Opposite To Mall, Jayamahal Road,Begaluru",
-  //     "phone": "7000320733",
-  //     "driver": "KA 07 AB 1234",
-  //     "items": [
-  //       {
-  //         "name": "Jeans (Wash & Iron)",
-  //         "quantity": 1
-  //       },
-  //       {
-  //         "name": "Pants (Iron)",
-  //         "quantity": 2
-  //       },
-  //       {
-  //         "name": "Pyjama Top (Wash)",
-  //         "quantity": 4
-  //       }
-  //     ]
-  //   }
-  // ]
+
   const [orders, setOrders] = useState<Order[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
