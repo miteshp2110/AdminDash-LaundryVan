@@ -26,19 +26,7 @@ const loader = new Loader({
   version: 'weekly',
 });
 
-// Sample region data
-const initialRegions = [
-  {
-    id: 1,
-    name: "Manhattan",
-    description: "Manhattan borough coverage area",
-    threshold: 5,
-    latitude: 40.7831,
-    longitude: -73.9712,
-  },
-  // ... other regions
-]
-
+const baseurl = "http://127.0.0.1:5000"
 declare global {
   interface Window {
     google: typeof google
@@ -46,7 +34,15 @@ declare global {
 }
 
 export default function RegionsPage() {
-  const [regions, setRegions] = useState(initialRegions)
+  interface Region{
+    id: number,
+    name: string,
+    description: string,
+    threshold: number,
+    latitude: number,
+    longitude: number
+  }
+  const [regions, setRegions] = useState<Region[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -57,9 +53,24 @@ export default function RegionsPage() {
     name: "",
     description: "",
     threshold: 5,
-    latitude: 40.7128,
-    longitude: -74.006,
+    latitude: 25.2048,
+    longitude: 55.2708,
   })
+
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const res = await fetch(`${baseurl}/admin/regions`)
+        const data = await res.json()
+        if (data.success) {
+          setRegions(data.data)
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+      }
+    }
+    fetchRegions()
+  }, []);
 
   // Refs for map containers
   const addMapRef = useRef<HTMLDivElement>(null)
@@ -74,6 +85,77 @@ export default function RegionsPage() {
   const [editMarker, setEditMarker] = useState<google.maps.Marker | null>(null)
   const [editCircle, setEditCircle] = useState<google.maps.Circle | null>(null)
   const [viewMap, setViewMap] = useState<google.maps.Map | null>(null)
+
+  async function addRegion(){
+    try{
+      const res = await fetch(`http://localhost:5000/admin/regions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any auth headers here if needed
+        },
+        body: JSON.stringify({
+          name:newRegion.name,
+          description:newRegion.description,
+          latitude:newRegion.latitude,
+          longitude:newRegion.longitude,
+          thresholdDistance:newRegion.threshold
+        })
+      })
+      const data = await res.json()
+      return !!data.success;
+
+    }catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+  async function updateRegion(){
+    try{
+      const res = await fetch(`http://localhost:5000/admin/regions/${currentRegion.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any auth headers here if needed
+        },
+        body: JSON.stringify({
+          name:currentRegion.name,
+          description:currentRegion.description,
+          latitude:currentRegion.latitude,
+          longitude:currentRegion.longitude,
+          thresholdDistance:currentRegion.threshold
+        })
+      })
+      const data = await res.json()
+      return !!data.success;
+
+    }catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+  async function deleteRegion(){
+    try{
+      const res = await fetch(`http://localhost:5000/admin/regions/${currentRegion.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any auth headers here if needed
+        }
+      })
+      const data = await res.json()
+      if(!data.success){
+        alert(data.message)
+      }
+      return !!data.success;
+
+    }catch (e) {
+      console.log(e)
+      return false
+    }
+  }
 
   // Filtered list
   const filteredRegions = regions.filter(
@@ -210,26 +292,49 @@ export default function RegionsPage() {
     if (!isViewMapDialogOpen) { setViewMap(null); }
   }, [isAddDialogOpen, isEditDialogOpen, isViewMapDialogOpen])
 
-  const handleAddRegion = () => {
-    const id = Math.max(...regions.map((r) => r.id), 0) + 1
-    setRegions([...regions, { ...newRegion, id }])
-    setNewRegion({
-      name: "",
-      description: "",
-      threshold: 5,
-      latitude: 40.7128,
-      longitude: -74.006,
-    })
+  const handleAddRegion =async () => {
+    if(!newRegion.name || !newRegion.latitude || !newRegion.longitude || !newRegion.threshold || !newRegion.description){
+      alert("All Fields Required")
+      return
+    }
+    if(await addRegion()){
+      const id = Math.max(...regions.map((r) => r.id), 0) + 1
+      setRegions([...regions, { ...newRegion, id }])
+      setNewRegion({
+        name: "",
+        description: "",
+        threshold: 5,
+        latitude: 25.2048,
+        longitude: 55.2708,
+      })
+    }
+    else{
+      alert("Failed to add region")
+    }
     setIsAddDialogOpen(false)
   }
 
-  const handleEditRegion = () => {
-    setRegions(regions.map((region) => (region.id === currentRegion.id ? currentRegion : region)))
+  const handleEditRegion = async() => {
+    if(!currentRegion.name || !currentRegion.latitude || !currentRegion.longitude || !currentRegion.threshold || !currentRegion.description){
+      alert("All Fields Required")
+      return
+    }
+    if(await updateRegion()){
+      setRegions(regions.map((region) => (region.id === currentRegion.id ? currentRegion : region)))
+    }
+    else{
+      alert("Failed to update region")
+    }
     setIsEditDialogOpen(false)
   }
 
-  const handleDeleteRegion = () => {
-    setRegions(regions.filter((region) => region.id !== currentRegion.id))
+  const handleDeleteRegion = async() => {
+    if(await deleteRegion()){
+      setRegions(regions.filter((region) => region.id !== currentRegion.id))
+    }
+    else{
+      alert("Failed to Delete Region")
+    }
     setIsDeleteDialogOpen(false)
   }
 
