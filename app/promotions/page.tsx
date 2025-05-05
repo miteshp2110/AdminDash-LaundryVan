@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React, {useEffect} from "react"
 
 import { useState, useRef } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
@@ -26,87 +26,24 @@ import { Switch } from "@/components/ui/switch"
 import { MoreVertical, Plus, Edit, Trash, ImageIcon, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-// Sample promotion data
-const initialPromotions = [
-  {
-    id: 1,
-    name: "Welcome Discount",
-    code: "WELCOME20",
-    type: "percentage",
-    value: 20,
-    description: "20% off your first order",
-    startDate: "2023-04-01",
-    endDate: "2023-06-30",
-    isActive: true,
-    usageLimit: 1,
-    usageCount: 45,
-    minOrderValue: 0,
-    image: "/placeholder.svg?height=155&width=312",
-  },
-  {
-    id: 2,
-    name: "Summer Special",
-    code: "SUMMER15",
-    type: "percentage",
-    value: 15,
-    description: "15% off all summer services",
-    startDate: "2023-06-01",
-    endDate: "2023-08-31",
-    isActive: true,
-    usageLimit: 0,
-    usageCount: 28,
-    minOrderValue: 0,
-    image: "/placeholder.svg?height=155&width=312",
-  },
-  {
-    id: 3,
-    name: "Free Delivery",
-    code: "FREEDEL",
-    type: "fixed",
-    value: 5,
-    description: "Free delivery on all orders",
-    startDate: "2023-04-15",
-    endDate: "2023-05-15",
-    isActive: false,
-    usageLimit: 0,
-    usageCount: 67,
-    minOrderValue: 25,
-    image: "/placeholder.svg?height=155&width=312",
-  },
-  {
-    id: 4,
-    name: "Weekend Special",
-    code: "WEEKEND10",
-    type: "percentage",
-    value: 10,
-    description: "10% off on weekend orders",
-    startDate: "2023-04-01",
-    endDate: "2023-12-31",
-    isActive: true,
-    usageLimit: 0,
-    usageCount: 32,
-    minOrderValue: 0,
-    image: "/placeholder.svg?height=155&width=312",
-  },
-  {
-    id: 5,
-    name: "Bulk Order Discount",
-    code: "BULK25",
-    type: "percentage",
-    value: 25,
-    description: "25% off on orders above $100",
-    startDate: "2023-03-01",
-    endDate: "2023-12-31",
-    isActive: true,
-    usageLimit: 0,
-    usageCount: 15,
-    minOrderValue: 100,
-    image: "/placeholder.svg?height=155&width=312",
-  },
-]
+const baseurl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+
 
 export default function PromotionsPage() {
-  const [promotions, setPromotions] = useState(initialPromotions)
+  interface Promotion {
+    id: number;
+    name: string;
+    code: string;
+    type: string; // assuming these are the only types
+    value: number;
+    description: string;
+    startDate: string; // ISO date string, or use Date if you're parsing it
+    endDate: string;
+    isActive: boolean;
+    minOrderValue: number;
+    image: string;
+  }
+  const [promotions, setPromotions] = useState<Promotion[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -120,54 +57,182 @@ export default function PromotionsPage() {
     startDate: new Date().toISOString().split("T")[0],
     endDate: "",
     isActive: true,
-    usageLimit: 0,
-    usageCount: 0,
     minOrderValue: 0,
-    image: "/placeholder.svg?height=155&width=312",
+    image: "/placeholder.svg?height=350&width=660",
   })
+
+  useEffect(() => {
+    const fetchPromotions = async () => {
+      try {
+        const res = await fetch(`${baseurl}/admin/promotions`)
+        const data = await res.json()
+        if (data.success) {
+          setPromotions(data.data)
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+      }
+    }
+    fetchPromotions()
+  }, []);
+
+  async function updatePromotion(){
+
+    try{
+      const formData = new FormData()
+      if(currentPromotion.image.split(":")[0] === 'blob'){
+        await fetch(currentPromotion.image).then(res=>res.blob()).then((blob)=>{
+          formData.append("image",blob,'upload.png')
+        })
+      }
+      formData.append("title", currentPromotion.name)
+      formData.append("description",currentPromotion.description)
+      if(currentPromotion.type === "percentage"){
+        formData.append("discount_percentage", currentPromotion.value)
+      }
+      else{
+        formData.append("fixed_discount",currentPromotion.value)
+      }
+      formData.append("threshHold", currentPromotion.minOrderValue)
+      formData.append("valid_from",currentPromotion.startDate)
+      formData.append("valid_to", currentPromotion.endDate)
+      formData.append("is_active",currentPromotion.isActive?"1":"0")
+      formData.append("coupon_code",currentPromotion.code)
+      const res = await fetch(`${baseurl}/admin/promotions/${currentPromotion.id}`, {
+        method: 'PUT',
+        headers: {
+
+          // Add any auth headers here if needed
+        },
+        body: formData
+      })
+      const data = await res.json()
+      return !!data.success;
+
+    }catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+  async function addPromotion(){
+    try{
+      const formData = new FormData()
+      await fetch(newPromotion.image).then(res=>res.blob()).then((blob)=>{
+        formData.append("image",blob,'upload.png')
+      })
+      formData.append("title", newPromotion.name)
+      formData.append("description",newPromotion.description)
+      if(newPromotion.type === "percentage"){
+        formData.append("discount_percentage", newPromotion.value.toString())
+      }
+      else{
+        formData.append("fixed_discount",newPromotion.value.toString())
+      }
+      formData.append("threshHold", newPromotion.minOrderValue.toString())
+      formData.append("valid_from",newPromotion.startDate)
+      formData.append("valid_to", newPromotion.endDate)
+      formData.append("is_active",newPromotion.isActive?"1":"0")
+      formData.append("coupon_code",newPromotion.code)
+      const res = await fetch(`${baseurl}/admin/promotions`, {
+        method: 'POST',
+        // headers: {
+        //
+        //   // Add any auth headers here if needed
+        // },
+        body: formData
+      })
+      const data = await res.json()
+      return !!data.success;
+
+    }catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+  async function deletePromotion(){
+    try{
+
+      const res = await fetch(`${baseurl}/admin/promotions/${currentPromotion.id}`, {
+        method: 'DELETE',
+        // headers: {
+        //
+        //   // Add any auth headers here if needed
+        // },
+      })
+      const data = await res.json()
+      if(!data.success){
+        alert(data.message)
+      }
+      return !!data.success;
+
+    }catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+
   const [imageError, setImageError] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const editFileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleAddPromotion = () => {
-    const id = Math.max(...promotions.map((p) => p.id)) + 1
-    setPromotions([...promotions, { ...newPromotion, id }])
-    setNewPromotion({
-      name: "",
-      code: "",
-      type: "percentage",
-      value: 0,
-      description: "",
-      startDate: new Date().toISOString().split("T")[0],
-      endDate: "",
-      isActive: true,
-      usageLimit: 0,
-      usageCount: 0,
-      minOrderValue: 0,
-      image: "/placeholder.svg?height=155&width=312",
-    })
+  const handleAddPromotion = async() => {
+    if(newPromotion.image === '/placeholder.svg?height=350&width=660' || !newPromotion.value || ! newPromotion.type || ! newPromotion.minOrderValue
+       || ! newPromotion.startDate || ! newPromotion.endDate || !newPromotion.name || !newPromotion.description
+    ){
+      alert("All Fields are required")
+      return
+    }
+    if(await addPromotion()){
+      const id = Math.max(...promotions.map((p) => p.id)) + 1
+      setPromotions([...promotions, { ...newPromotion, id }])
+      setNewPromotion({
+        name: "",
+        code: "",
+        type: "percentage",
+        value: 0,
+        description: "",
+        startDate: new Date().toISOString().split("T")[0],
+        endDate: "",
+        isActive: true,
+        minOrderValue: 0,
+        image: "/placeholder.svg?height=350&width=660",
+      })
+    }
+    else{
+      alert("Failed to add promotion")
+    }
     setIsAddDialogOpen(false)
     setImageError("")
   }
 
-  const handleEditPromotion = () => {
-    setPromotions(promotions.map((promotion) => (promotion.id === currentPromotion.id ? currentPromotion : promotion)))
+  const handleEditPromotion = async() => {
+
+    if(currentPromotion.image === '/placeholder.svg?height=350&width=660' || !currentPromotion.value || ! currentPromotion.type || ! currentPromotion.minOrderValue
+        || ! currentPromotion.startDate || ! currentPromotion.endDate || !currentPromotion.name || !currentPromotion.description
+    ){
+      alert("All Fields are required")
+      return
+    }
+    if(await updatePromotion()){
+      setPromotions(promotions.map((promotion) => (promotion.id === currentPromotion.id ? currentPromotion : promotion)))
+    }
+    else{
+      alert("Failed to update")
+    }
     setIsEditDialogOpen(false)
     setImageError("")
   }
 
-  const handleDeletePromotion = () => {
-    setPromotions(promotions.filter((promotion) => promotion.id !== currentPromotion.id))
+  const handleDeletePromotion = async() => {
+    if(await deletePromotion()){
+      setPromotions(promotions.filter((promotion) => promotion.id !== currentPromotion.id))
+    }
     setIsDeleteDialogOpen(false)
   }
 
-  const handleToggleActive = (id: number) => {
-    setPromotions(
-      promotions.map((promotion) =>
-        promotion.id === id ? { ...promotion, isActive: !promotion.isActive } : promotion,
-      ),
-    )
-  }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
     const file = e.target.files?.[0]
@@ -176,8 +241,8 @@ export default function PromotionsPage() {
     const img = new Image()
     img.onload = () => {
       URL.revokeObjectURL(img.src)
-      if (img.width !== 312 || img.height !== 155) {
-        setImageError("Image must be exactly 312x155 pixels")
+      if (img.width > 660 || img.height > 350) {
+        setImageError("Image must be less then 660x350 pixels")
         return
       }
 
@@ -261,7 +326,7 @@ export default function PromotionsPage() {
                           onChange={(e) => setNewPromotion({ ...newPromotion, type: e.target.value })}
                         >
                           <option value="percentage">Percentage (%)</option>
-                          <option value="fixed">Fixed Amount ($)</option>
+                          <option value="fixed">Fixed Amount (AED)</option>
                         </select>
                       </div>
                       <div className="space-y-2">
@@ -306,18 +371,7 @@ export default function PromotionsPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="usageLimit">Usage Limit (0 for unlimited)</Label>
-                        <Input
-                          id="usageLimit"
-                          type="number"
-                          value={newPromotion.usageLimit}
-                          onChange={(e) =>
-                            setNewPromotion({ ...newPromotion, usageLimit: Number.parseInt(e.target.value) })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="minOrderValue">Minimum Order Value ($)</Label>
+                        <Label htmlFor="minOrderValue">Minimum Order Value (AED)</Label>
                         <Input
                           id="minOrderValue"
                           type="number"
@@ -340,7 +394,7 @@ export default function PromotionsPage() {
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="image">Promotion Image (312x155 pixels)</Label>
+                      <Label htmlFor="image">Promotion Image (660x350 pixels)</Label>
                       <div className="border rounded-md p-4 space-y-4">
                         <div className="aspect-[2/1] relative bg-gray-100 rounded-md overflow-hidden">
                           <img
@@ -373,7 +427,7 @@ export default function PromotionsPage() {
                           </Alert>
                         )}
                         <p className="text-xs text-text-muted">
-                          Image must be exactly 312x155 pixels. This image will be displayed in the app.
+                          Image must be exactly 660x350 pixels. This image will be displayed in the app.
                         </p>
                       </div>
                     </div>
@@ -489,7 +543,7 @@ export default function PromotionsPage() {
                                 <p className="font-medium">
                                   {promotion.type === "percentage"
                                     ? `${promotion.value}%`
-                                    : `$${promotion.value.toFixed(2)}`}
+                                    : `AED ${promotion.value.toFixed(2)}`}
                                 </p>
                               </div>
                               <div>
@@ -510,7 +564,6 @@ export default function PromotionsPage() {
                         <TableHead>Code</TableHead>
                         <TableHead>Discount</TableHead>
                         <TableHead>Validity</TableHead>
-                        <TableHead>Usage</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -543,7 +596,7 @@ export default function PromotionsPage() {
                             <TableCell>
                               {promotion.type === "percentage"
                                 ? `${promotion.value}%`
-                                : `$${promotion.value.toFixed(2)}`}
+                                : `AED ${promotion.value.toFixed(2)}`}
                             </TableCell>
                             <TableCell>
                               <div className="text-sm">
@@ -552,15 +605,7 @@ export default function PromotionsPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              {promotion.usageCount}
-                              {promotion.usageLimit > 0 && ` / ${promotion.usageLimit}`}
-                            </TableCell>
-                            <TableCell>
                               <div className="flex items-center space-x-2">
-                                <Switch
-                                  checked={promotion.isActive}
-                                  onCheckedChange={() => handleToggleActive(promotion.id)}
-                                />
                                 {getStatusBadge(promotion.isActive)}
                               </div>
                             </TableCell>
@@ -645,7 +690,7 @@ export default function PromotionsPage() {
                           onChange={(e) => setCurrentPromotion({ ...currentPromotion, type: e.target.value })}
                         >
                           <option value="percentage">Percentage (%)</option>
-                          <option value="fixed">Fixed Amount ($)</option>
+                          <option value="fixed">Fixed Amount (AED)</option>
                         </select>
                       </div>
                       <div className="space-y-2">
@@ -690,18 +735,7 @@ export default function PromotionsPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-usageLimit">Usage Limit (0 for unlimited)</Label>
-                        <Input
-                          id="edit-usageLimit"
-                          type="number"
-                          value={currentPromotion.usageLimit}
-                          onChange={(e) =>
-                            setCurrentPromotion({ ...currentPromotion, usageLimit: Number.parseInt(e.target.value) })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-minOrderValue">Minimum Order Value ($)</Label>
+                        <Label htmlFor="edit-minOrderValue">Minimum Order Value (AED)</Label>
                         <Input
                           id="edit-minOrderValue"
                           type="number"
@@ -727,7 +761,7 @@ export default function PromotionsPage() {
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-image">Promotion Image (312x155 pixels)</Label>
+                      <Label htmlFor="edit-image">Promotion Image (660x350 pixels)</Label>
                       <div className="border rounded-md p-4 space-y-4">
                         <div className="aspect-[2/1] relative bg-gray-100 rounded-md overflow-hidden">
                           <img
@@ -760,7 +794,7 @@ export default function PromotionsPage() {
                           </Alert>
                         )}
                         <p className="text-xs text-text-muted">
-                          Image must be exactly 312x155 pixels. This image will be displayed in the app.
+                          Image must be exactly 660x350 pixels. This image will be displayed in the app.
                         </p>
                       </div>
                     </div>
@@ -814,7 +848,7 @@ export default function PromotionsPage() {
                     <p className="text-text-muted">
                       {currentPromotion.type === "percentage"
                         ? `${currentPromotion.value}% off`
-                        : `$${currentPromotion.value.toFixed(2)} off`}
+                        : `AED ${currentPromotion.value.toFixed(2)} off`}
                     </p>
                   </div>
                 </div>
