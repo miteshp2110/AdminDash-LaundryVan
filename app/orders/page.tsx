@@ -1,6 +1,6 @@
 "use client"
 
-import {useEffect, useState} from "react"
+import { useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,10 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MoreVertical, Eye, Edit, XCircle, Truck, Search, Calendar, MapPin, Package, User } from "lucide-react"
-import {Property} from "csstype";
-import Order = Property.Order;
-
+import { MoreVertical, Eye, Edit, Truck, Search, Calendar, MapPin, Package, User } from "lucide-react"
 
 export default function OrdersPage() {
   interface OrderItem {
@@ -41,12 +38,15 @@ export default function OrdersPage() {
     phone: string
     driver: string
     items: OrderItem[]
+    paymentMode: string
   }
 
   const [orders, setOrders] = useState<Order[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [currentOrder, setCurrentOrder] = useState<any>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState("")
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -61,16 +61,37 @@ export default function OrdersPage() {
       }
     }
     fetchOrders()
-  }, []);
+  }, [])
 
+  const updateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      const response = await fetch("/api/orders/update-status", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderId, status }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Update the local state to reflect the change
+        setOrders(orders.map((order) => (order.id === orderId ? { ...order, status } : order)))
+        setIsEditDialogOpen(false)
+      } else {
+        console.error("Failed to update order status:", data.message)
+      }
+    } catch (error) {
+      console.error("Error updating order status:", error)
+    }
+  }
 
   const filteredOrders = orders.filter(
     (order) =>
       order.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer.toLowerCase().includes(searchTerm.toLowerCase()),
   )
-
-
 
   const getStatusBadge = (status: string) => {
     // console.log(status)
@@ -184,6 +205,19 @@ export default function OrdersPage() {
                                     <Eye className="h-4 w-4 mr-2" />
                                     View Details
                                   </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      // Only allow editing for cash payment orders
+                                      if (order.paymentMode === "cash") {
+                                        setCurrentOrder(order)
+                                        setSelectedStatus(order.status)
+                                        setIsEditDialogOpen(true)
+                                      }
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit Status
+                                  </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </TableCell>
@@ -264,6 +298,66 @@ export default function OrdersPage() {
             )}
             <DialogFooter>
               <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Order Status Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Order Status</DialogTitle>
+              <DialogDescription>Update the status for this order</DialogDescription>
+            </DialogHeader>
+            {currentOrder && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-lg">Order #{currentOrder.id}</h3>
+                  <p className="text-sm text-text-muted">Customer: {currentOrder.customer}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="status">Order Status</Label>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Button
+                      variant={selectedStatus === "orderplaced" ? "default" : "outline"}
+                      className={selectedStatus === "orderplaced" ? "" : "border"}
+                      onClick={() => setSelectedStatus("orderplaced")}
+                    >
+                      Order Placed
+                    </Button>
+                    <Button
+                      variant={selectedStatus === "orderpickedup" ? "default" : "outline"}
+                      className={selectedStatus === "orderpickedup" ? "" : "border"}
+                      onClick={() => setSelectedStatus("orderpickedup")}
+                    >
+                      Order Picked Up
+                    </Button>
+                    <Button
+                      variant={selectedStatus === "outfordelivery" ? "default" : "outline"}
+                      className={selectedStatus === "outfordelivery" ? "" : "border"}
+                      onClick={() => setSelectedStatus("outfordelivery")}
+                    >
+                      Out For Delivery
+                    </Button>
+                    <Button
+                      variant={selectedStatus === "delivered" ? "default" : "outline"}
+                      className={selectedStatus === "delivered" ? "" : "border"}
+                      onClick={() => setSelectedStatus("delivered")}
+                    >
+                      Delivered
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => currentOrder && updateOrderStatus(currentOrder.id, selectedStatus)}>
+                Update Status
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
