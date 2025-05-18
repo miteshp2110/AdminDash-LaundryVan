@@ -22,7 +22,7 @@ import { MoreVertical, Eye, Edit, XCircle, Truck, Search, Calendar, MapPin, Pack
 import {Property} from "csstype";
 import Order = Property.Order;
 
-
+const baseUrl = 'http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins'
 export default function OrdersPage() {
   interface OrderItem {
     name: string
@@ -51,7 +51,7 @@ export default function OrdersPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await fetch("http://localhost:5000/admin/orders/detail")
+        const res = await fetch(`${baseUrl}/admin/orders/detail`)
         const data = await res.json()
         if (data.success) {
           setOrders(data.data)

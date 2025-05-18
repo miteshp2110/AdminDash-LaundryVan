@@ -22,50 +22,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { MoreVertical, Plus, Edit, Trash, Search } from "lucide-react"
 
-// Sample van data
-const initialVans = [
-  {
-    id: 1,
-    regionId: 1,
-    regionName: "Manhattan",
-    regNo: "NY-12345",
-    status: "active",
-    phone : "1234567890"
-  },
-  {
-    id: 2,
-    regionId: 2,
-    regionName: "Brooklyn",
-    regNo: "NY-67890",
-    status: "active",
-    phone : "1234567890"
-  },
-  {
-    id: 3,
-    regionId: 3,
-    regionName: "Queens",
-    regNo: "NY-54321",
-    status: "active",
-    phone : "1234567890"
-  },
-  {
-    id: 4,
-
-    regionId: 4,
-    regionName: "Bronx",
-    regNo: "NY-13579",
-    status: "inactive",
-    phone : "1234567890"
-  },
-  {
-    id: 5,
-    regionId: 5,
-    regionName: "Staten Island",
-    regNo: "NY-24680",
-    status: "inactive",
-    phone : "1234567890"
-  },
-]
+const baseUrl = 'http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins'
 
 // Sample regions for dropdown
 
@@ -102,7 +59,7 @@ export default function VansPage() {
   useEffect(() => {
     const fetchRegions = async()=>{
       try {
-        const res = await fetch("http://localhost:5000/admin/regions")
+        const res = await fetch(`${baseUrl}/admin/regions`)
         const data = await res.json()
         if (data.success) {
           setRegions(data.data)
@@ -113,7 +70,7 @@ export default function VansPage() {
     }
     const fetchVans = async()=>{
       try {
-        const res = await fetch("http://localhost:5000/admin/drivers")
+        const res = await fetch(`${baseUrl}/admin/drivers`)
         const data = await res.json()
         if (data.success) {
           setVans(data.data)
@@ -134,7 +91,7 @@ export default function VansPage() {
 
   async function  addVan(){
     try{
-      const res = await fetch(`http://localhost:5000/admin/addDriver`, {
+      const res = await fetch(`${baseUrl}/admin/addDriver`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -159,7 +116,7 @@ export default function VansPage() {
   async function toggleStatus(id: number,status : string) {
     const newStatus = status !== "active"
     try{
-      const res = await fetch(`http://localhost:5000/admin/drivers/${id}`, {
+      const res = await fetch(`${baseUrl}/admin/drivers/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -182,7 +139,7 @@ export default function VansPage() {
   async function updateVan() {
     console.log(currentVan.id,currentVan.phone,currentVan.regionId)
     try{
-      const res = await fetch(`http://localhost:5000/admin/updateDriver/${currentVan.id}`, {
+      const res = await fetch(`${baseUrl}/admin/updateDriver/${currentVan.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

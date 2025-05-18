@@ -17,6 +17,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { MoreVertical, Search, User, ShoppingBag, Mail, Phone, Calendar } from "lucide-react"
 
+
+const baseUrl = 'http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins'
 // Define the user type based on the API response
 interface UserType {
   id: number
@@ -40,7 +42,7 @@ export default function UsersPage() {
     const fetchUsers = async () => {
       try {
         setLoading(true)
-        const res = await fetch("http://localhost:5000/admin/users")
+        const res = await fetch(`${baseUrl}/admin/users`)
         const data = await res.json()
         if (data.success) {
           setUsers(data.data)
@@ -98,7 +100,7 @@ export default function UsersPage() {
                     <TableHead>Join Date</TableHead>
                     <TableHead>Total Orders</TableHead>
                     <TableHead>Total Spent</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {/*<TableHead className="text-right">Actions</TableHead>*/}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -109,35 +111,35 @@ export default function UsersPage() {
                       <TableCell>{user.phone}</TableCell>
                       <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>{user.total_orders}</TableCell>
-                      <TableCell>${Number.parseFloat(user.total_spent.toString()).toFixed(2)}</TableCell>
+                      <TableCell>AED {Number.parseFloat(user.total_spent.toString()).toFixed(2)}</TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setCurrentUser(user)
-                                setIsViewDialogOpen(true)
-                              }}
-                            >
-                              <User className="h-4 w-4 mr-2" />
-                              View Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setCurrentUser(user)
-                                setIsOrderHistoryDialogOpen(true)
-                              }}
-                            >
-                              <ShoppingBag className="h-4 w-4 mr-2" />
-                              Order History
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {/*<DropdownMenu>*/}
+                        {/*  <DropdownMenuTrigger asChild>*/}
+                        {/*    <Button variant="ghost" size="icon">*/}
+                        {/*      <MoreVertical className="h-4 w-4" />*/}
+                        {/*    </Button>*/}
+                        {/*  </DropdownMenuTrigger>*/}
+                        {/*  <DropdownMenuContent align="end">*/}
+                        {/*    <DropdownMenuItem*/}
+                        {/*      onClick={() => {*/}
+                        {/*        setCurrentUser(user)*/}
+                        {/*        setIsViewDialogOpen(true)*/}
+                        {/*      }}*/}
+                        {/*    >*/}
+                        {/*      <User className="h-4 w-4 mr-2" />*/}
+                        {/*      View Profile*/}
+                        {/*    </DropdownMenuItem>*/}
+                        {/*    <DropdownMenuItem*/}
+                        {/*      onClick={() => {*/}
+                        {/*        setCurrentUser(user)*/}
+                        {/*        setIsOrderHistoryDialogOpen(true)*/}
+                        {/*      }}*/}
+                        {/*    >*/}
+                        {/*      <ShoppingBag className="h-4 w-4 mr-2" />*/}
+                        {/*      Order History*/}
+                        {/*    </DropdownMenuItem>*/}
+                        {/*  </DropdownMenuContent>*/}
+                        {/*</DropdownMenu>*/}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -189,7 +191,7 @@ export default function UsersPage() {
                     <div>
                       <p className="text-sm text-text-muted">Total Spent</p>
                       <p className="font-semibold text-lg">
-                        ${Number.parseFloat(currentUser.total_spent.toString()).toFixed(2)}
+                        AED {Number.parseFloat(currentUser.total_spent.toString()).toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -217,7 +219,7 @@ export default function UsersPage() {
                 </div>
                 <div className="text-center py-4">
                   <p>Total Orders: {currentUser.total_orders}</p>
-                  <p>Total Spent: ${Number.parseFloat(currentUser.total_spent.toString()).toFixed(2)}</p>
+                  <p>Total Spent: AED {Number.parseFloat(currentUser.total_spent.toString()).toFixed(2)}</p>
                   <p className="text-sm text-text-muted mt-2">Detailed order history is not available in this view.</p>
                 </div>
               </div>

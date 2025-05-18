@@ -195,8 +195,8 @@ export default function SettingsPage() {
           <Tabs defaultValue="business" className="space-y-4">
             <TabsList>
               <TabsTrigger value="business">Business Information</TabsTrigger>
-              <TabsTrigger value="payment">Payment Settings</TabsTrigger>
-              <TabsTrigger value="notification">Notification Settings</TabsTrigger>
+              {/*<TabsTrigger value="payment">Payment Settings</TabsTrigger>*/}
+              {/*<TabsTrigger value="notification">Notification Settings</TabsTrigger>*/}
               <TabsTrigger value="admin">Admin Settings</TabsTrigger>
             </TabsList>
 

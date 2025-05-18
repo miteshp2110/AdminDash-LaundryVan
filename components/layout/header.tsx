@@ -47,10 +47,10 @@ export function Header({ className }: HeaderProps) {
     <header className={`flex h-16 items-center justify-between border-b border-line-light px-6 ${className}`}>
       <div className="flex-1" />
       <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5 text-text-muted" />
-          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-status-danger" />
-        </Button>
+        {/*<Button variant="ghost" size="icon" className="relative">*/}
+        {/*  <Bell className="h-5 w-5 text-text-muted" />*/}
+        {/*  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-status-danger" />*/}
+        {/*</Button>*/}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-9 w-9 rounded-full">
