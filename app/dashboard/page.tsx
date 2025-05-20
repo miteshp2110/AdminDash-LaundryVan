@@ -99,6 +99,7 @@ export default function DashboardPage() {
     };
     const fetchPickups = async () => {
       try {
+
         const response = await fetch(`${baseUrl}/admin/todays-pickups`); // Replace with your actual API path
         const data = await response.json();
         if (data.success) {
@@ -197,8 +198,8 @@ export default function DashboardPage() {
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
+            {/* <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
