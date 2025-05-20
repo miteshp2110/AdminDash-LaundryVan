@@ -163,7 +163,7 @@ export default function PromotionsPage() {
       })
       const data = await res.json()
       if(!data.success){
-        alert(data.message)
+        alert("Cannot Delete a Promotion in use")
       }
       return !!data.success;
 

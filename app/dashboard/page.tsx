@@ -7,6 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, LineChart } from "@/components/charts"
 import { ShoppingCart, Users, Truck, Package, ArrowUp, ArrowDown, DollarSign, Calendar } from "lucide-react"
 
+
+
+const baseUrl = 'http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins'
 export default function DashboardPage() {
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalUsers, setTotalUsers]= useState(0);
@@ -31,7 +34,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await fetch("http://localhost:5000/admin/orders") 
+        const res = await fetch(`${baseUrl}/admin/orders`)
         const data = await res.json()
         if (data.success) {
           setTotalOrders(data.data.length)
@@ -42,7 +45,7 @@ export default function DashboardPage() {
     }
     const fetchTotalUsers = async () => {
       try {
-        const res = await fetch("http://localhost:5000/admin/total-users");
+        const res = await fetch(`${baseUrl}/admin/total-users`);
         const data = await res.json();
         console.log(data); // Verify the response
     
@@ -57,7 +60,7 @@ export default function DashboardPage() {
 
     const fetchActiveDrivers = async () => {
       try {
-        const res= await fetch("http://localhost:5000/admin/active-drivers")
+        const res= await fetch(`${baseUrl}/admin/active-drivers`)
         const data = await res.json()
         if (data.success) {
           setActiveDrivers(data.data.length)
@@ -69,7 +72,7 @@ export default function DashboardPage() {
 
     const fetchRevenue = async () => {
       try {
-        const res = await fetch("http://localhost:5000/admin/orders-total-revenue")
+        const res = await fetch(`${baseUrl}/admin/orders-total-revenue`)
         const data = await res.json()
         console.log(data); // Verify the response
         if (data.success) {
@@ -81,7 +84,7 @@ export default function DashboardPage() {
     }
     const fetchRecentOrders = async () => {
       try {
-        const res = await fetch("http://localhost:5000/admin/orders-recent");
+        const res = await fetch(`${baseUrl}/admin/orders-recent`);
         const data = await res.json();
         if (data.success) {
           setRecentOrders(data.recentOrders);
@@ -96,7 +99,8 @@ export default function DashboardPage() {
     };
     const fetchPickups = async () => {
       try {
-        const response = await fetch("http://localhost:5000/admin/todays-pickups"); 
+
+        const response = await fetch(`${baseUrl}/admin/todays-pickups`); // Replace with your actual API path
         const data = await response.json();
         if (data.success) {
           setPickups(data.todaysPickups);
@@ -133,10 +137,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-text-muted text-sm">Total Orders</p>
                   <h3 className="text-2xl font-bold text-text-dark mt-1">{totalOrders}</h3>
-                  <div className="flex items-center mt-1 text-status-success text-sm">
-                    <ArrowUp className="h-4 w-4 mr-1" />
-                    <span>12.5%</span>
-                  </div>
+
                 </div>
                 <div className="h-12 w-12 rounded-full bg-bg-accent-light flex items-center justify-center">
                   <ShoppingCart className="h-6 w-6 text-brand-primary" />
@@ -154,10 +155,7 @@ export default function DashboardPage() {
                   <h3 className="text-2xl font-bold text-text-dark mt-1">
                     {totalUsers !== 0 ? totalUsers : 'Loading...'}
                   </h3>
-                  <div className="flex items-center mt-1 text-status-success text-sm">
-                    <ArrowUp className="h-4 w-4 mr-1" />
-                    <span>8.2%</span>
-                  </div>
+
                 </div>
                 <div className="h-12 w-12 rounded-full bg-bg-accent-light flex items-center justify-center">
                   <Users className="h-6 w-6 text-brand-primary" />
@@ -172,10 +170,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-text-muted text-sm">Active Drivers</p>
                   <h3 className="text-2xl font-bold text-text-dark mt-1">{activeDrivers}</h3>
-                  <div className="flex items-center mt-1 text-status-danger text-sm">
-                    <ArrowDown className="h-4 w-4 mr-1" />
-                    <span>3.1%</span>
-                  </div>
+
                 </div>
                 <div className="h-12 w-12 rounded-full bg-bg-accent-light flex items-center justify-center">
                   <Truck className="h-6 w-6 text-brand-primary" />
@@ -190,10 +185,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-text-muted text-sm">Revenue</p>
                   <h3 className="text-2xl font-bold text-text-dark mt-1">AED {revenue}</h3>
-                  <div className="flex items-center mt-1 text-status-success text-sm">
-                    <ArrowUp className="h-4 w-4 mr-1" />
-                    <span>18.3%</span>
-                  </div>
+
                 </div>
                 <div className="h-12 w-12 rounded-full bg-bg-accent-light flex items-center justify-center">
                   <DollarSign className="h-6 w-6 text-brand-primary" />
@@ -234,7 +226,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-4">
                 <CardHeader>
                   <CardTitle>Recent Orders</CardTitle>
                   <CardDescription>Latest orders from customers</CardDescription>
@@ -265,50 +257,50 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              <Card>
-      <CardHeader>
-        <CardTitle>Upcoming Pickups</CardTitle>
-        <CardDescription>Scheduled for today</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {loading ? (
-            <p>Loading...</p>
-          ) : pickups.length === 0 ? (
-            <p className="text-text-muted">No pickups scheduled for today.</p>
-          ) : (
-            pickups.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center justify-between border-b border-line-light pb-4 last:border-0 last:pb-0"
-              >
-                <div className="flex items-center">
-                  <div className="h-10 w-10 rounded-full bg-bg-light flex items-center justify-center mr-3">
-                    <Calendar className="h-5 w-5 text-brand-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-text-dark">
-                      {order.customer_name || "Unknown"}
-                    </p>
-                    <p className="text-sm text-text-muted">
-                      {new Date(order.pickup_date).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-status-success">
-                    {order.status || "Confirmed"}
-                  </p>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    {/*          <Card>*/}
+    {/*  <CardHeader>*/}
+    {/*    <CardTitle>Upcoming Pickups</CardTitle>*/}
+    {/*    <CardDescription>Scheduled for today</CardDescription>*/}
+    {/*  </CardHeader>*/}
+    {/*  <CardContent>*/}
+    {/*    <div className="space-y-4">*/}
+    {/*      {loading ? (*/}
+    {/*        <p>Loading...</p>*/}
+    {/*      ) : pickups.length === 0 ? (*/}
+    {/*        <p className="text-text-muted">No pickups scheduled for today.</p>*/}
+    {/*      ) : (*/}
+    {/*        pickups.map((order) => (*/}
+    {/*          <div*/}
+    {/*            key={order.id}*/}
+    {/*            className="flex items-center justify-between border-b border-line-light pb-4 last:border-0 last:pb-0"*/}
+    {/*          >*/}
+    {/*            <div className="flex items-center">*/}
+    {/*              <div className="h-10 w-10 rounded-full bg-bg-light flex items-center justify-center mr-3">*/}
+    {/*                <Calendar className="h-5 w-5 text-brand-primary" />*/}
+    {/*              </div>*/}
+    {/*              <div>*/}
+    {/*                <p className="font-medium text-text-dark">*/}
+    {/*                  {order.customer_name || "Unknown"}*/}
+    {/*                </p>*/}
+    {/*                <p className="text-sm text-text-muted">*/}
+    {/*                  {new Date(order.pickup_date).toLocaleTimeString([], {*/}
+    {/*                    hour: "2-digit",*/}
+    {/*                    minute: "2-digit",*/}
+    {/*                  })}*/}
+    {/*                </p>*/}
+    {/*              </div>*/}
+    {/*            </div>*/}
+    {/*            <div className="text-right">*/}
+    {/*              <p className="text-sm font-medium text-status-success">*/}
+    {/*                {order.status || "Confirmed"}*/}
+    {/*              </p>*/}
+    {/*            </div>*/}
+    {/*          </div>*/}
+    {/*        ))*/}
+    {/*      )}*/}
+    {/*    </div>*/}
+    {/*  </CardContent>*/}
+    {/*</Card>*/}
             </div>
           </TabsContent>
 

@@ -18,7 +18,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+
 import { MoreVertical, Eye, Edit, Truck, Search, Calendar, MapPin, Package, User, DollarSign } from "lucide-react"
+import {Property} from "csstype";
+import Order = Property.Order;
+
+const baseUrl = 'http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins'
 
 export default function OrdersPage() {
   interface OrderItem {
@@ -51,7 +56,7 @@ export default function OrdersPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await fetch("http://localhost:5000/admin/orders/detail")
+        const res = await fetch(`${baseUrl}/admin/orders/detail`)
         const data = await res.json()
         if (data.success) {
           setOrders(data.data)

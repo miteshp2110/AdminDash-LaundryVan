@@ -26,7 +26,7 @@ const loader = new Loader({
   version: 'weekly',
 });
 
-const baseurl = "http://127.0.0.1:5000"
+const baseurl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
 declare global {
   interface Window {
     google: typeof google
@@ -88,7 +88,7 @@ export default function RegionsPage() {
 
   async function addRegion(){
     try{
-      const res = await fetch(`http://localhost:5000/admin/regions`, {
+      const res = await fetch(`${baseurl}/admin/regions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ export default function RegionsPage() {
 
   async function updateRegion(){
     try{
-      const res = await fetch(`http://localhost:5000/admin/regions/${currentRegion.id}`, {
+      const res = await fetch(`${baseurl}/admin/regions/${currentRegion.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ export default function RegionsPage() {
 
   async function deleteRegion(){
     try{
-      const res = await fetch(`http://localhost:5000/admin/regions/${currentRegion.id}`, {
+      const res = await fetch(`${baseurl}/admin/regions/${currentRegion.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
