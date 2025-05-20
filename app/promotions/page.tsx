@@ -27,6 +27,7 @@ import { MoreVertical, Plus, Edit, Trash, ImageIcon, AlertCircle } from "lucide-
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 const baseurl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+// const baseurl = "http://localhost:5000"
 
 
 export default function PromotionsPage() {
@@ -163,7 +164,7 @@ export default function PromotionsPage() {
       })
       const data = await res.json()
       if(!data.success){
-        alert("Cannot Delete a Promotion in use")
+        alert(data.message)
       }
       return !!data.success;
 

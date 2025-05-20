@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React, {useEffect} from "react"
 
 import { useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
@@ -14,17 +14,45 @@ import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2, Save, UserPlus, Lock } from "lucide-react"
 
+const baseUrl = 'http://localhost:5000'
+
 export default function SettingsPage() {
+  interface BusinessInfo {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    website: string;
+    description: string;
+  }
+
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
-  const [businessInfo, setBusinessInfo] = useState({
-    name: "Laundry-Van",
-    email: "contact@laundryvan.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Laundry St, New York, NY 10001",
-    website: "https://laundryvan.com",
-    description: "Premium laundry services delivered to your doorstep.",
+  const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    website: "",
+    description: ""
   })
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch(`${baseUrl}/settings`)
+      const data = await res.json()
+      if (data.success) {
+        setBusinessInfo(data.data)
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error)
+    }
+  }
+
+  useEffect(() => {
+    fetchSettings()
+  }, []);
+
 
   const [paymentSettings, setPaymentSettings] = useState({
     enableCreditCard: true,
