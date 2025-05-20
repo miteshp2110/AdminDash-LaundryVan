@@ -96,7 +96,7 @@ export default function DashboardPage() {
     };
     const fetchPickups = async () => {
       try {
-        const response = await fetch("http://localhost:5000/admin/todays-pickups"); // Replace with your actual API path
+        const response = await fetch("http://localhost:5000/admin/todays-pickups"); 
         const data = await response.json();
         if (data.success) {
           setPickups(data.todaysPickups);

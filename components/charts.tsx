@@ -167,42 +167,76 @@ export function BarChart() {
 
   return <canvas ref={chartRef} height={300} />
 }
-export function PieChart() {
+
+//order history chart
+export function OrderLineChart() {
   const chartRef = useRef<HTMLCanvasElement>(null)
   const chartInstance = useRef<Chart | null>(null)
 
   useEffect(() => {
-    if (chartRef.current) {
-      const ctx = chartRef.current.getContext("2d")
+    const fetchChartData2 = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/admin/orders/daily-order-count") 
+        const result = await response.json()
 
-      if (ctx) {
-        if (chartInstance.current) chartInstance.current.destroy()
+        if (result.success && chartRef.current) {
+          const ctx = chartRef.current.getContext("2d")
 
-        chartInstance.current = new Chart(ctx, {
-          type: "pie",
-          data: {
-            labels: ["Wash", "Wash & Iron", "Iron", "Dry Wash"],
-            datasets: [
-              {
-                label: "Service Distribution",
-                data: [450, 320, 280, 120],
-                backgroundColor: ["#ED5050", "#E6F7FF", "#F39739", "#219653"],
-                borderWidth: 1,
+          if (ctx) {
+            if (chartInstance.current) chartInstance.current.destroy()
+
+            const labels = result.data.map((item: any) => item.date)
+            const data = result.data.map((item: any) => item.total_orders)
+
+            chartInstance.current = new Chart(ctx, {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "Orders per Day",
+                    data,
+                    borderColor: "#0040FF",
+                    backgroundColor: "rgba(230, 236, 255, 1)",
+                    tension: 0.4,
+                    fill: true,
+                  },
+                ],
               },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                position: "right",
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: false,
+                  },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    grid: {
+                      color: "rgba(0, 0, 0, 0.05)",
+                    },
+                    ticks: {
+                      callback: (value) => `${value}`,
+                    },
+                  },
+                  x: {
+                    grid: {
+                      display: false,
+                    },
+                  },
+                },
               },
-            },
-          },
-        })
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch chart data:", error)
       }
     }
+
+    fetchChartData2()
 
     return () => {
       if (chartInstance.current) chartInstance.current.destroy()
@@ -211,3 +245,83 @@ export function PieChart() {
 
   return <canvas ref={chartRef} height={300} />
 }
+
+export function DriverLineChart() {
+  const chartRef = useRef<HTMLCanvasElement>(null)
+  const chartInstance = useRef<Chart | null>(null)
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/admin/regions/van-count")
+        const result = await response.json()
+
+        if (result.success && chartRef.current) {
+          const ctx = chartRef.current.getContext("2d")
+
+          if (ctx) {
+            if (chartInstance.current) chartInstance.current.destroy()
+
+            const labels = result.data.map((item: any) => item.region_name)
+            const data = result.data.map((item: any) => item.van_count)
+
+            chartInstance.current = new Chart(ctx, {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: "Total Vans per Region",
+                    data,
+                    borderColor: "#219653", // green
+                    backgroundColor: "rgba(33, 150, 83, 0.1)",
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointHoverRadius: 6,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: true,
+                  },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    grid: {
+                      color: "rgba(0, 0, 0, 0.05)",
+                    },
+                    ticks: {
+                      callback: (value) => `${value}`,
+                    },
+                  },
+                  x: {
+                    grid: {
+                      display: false,
+                    },
+                  },
+                },
+              },
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch van count by region:", error)
+      }
+    }
+
+    fetchChartData()
+
+    return () => {
+      if (chartInstance.current) chartInstance.current.destroy()
+    }
+  }, [])
+
+  return <canvas ref={chartRef} height={300} />
+}
+

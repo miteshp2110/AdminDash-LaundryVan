@@ -18,7 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MoreVertical, Eye, Edit, Truck, Search, Calendar, MapPin, Package, User } from "lucide-react"
+import { MoreVertical, Eye, Edit, Truck, Search, Calendar, MapPin, Package, User, DollarSign } from "lucide-react"
 
 export default function OrdersPage() {
   interface OrderItem {
@@ -64,28 +64,34 @@ export default function OrdersPage() {
   }, [])
 
   const updateOrderStatus = async (orderId: string, status: string) => {
+    
     try {
-      const response = await fetch("/api/orders/update-status", {
+      const response = await fetch(`http://localhost:5000/admin/orders/${orderId}`, { // pass orderId in URL
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ orderId, status }),
-      })
+        body: JSON.stringify({ order_status: status }), // send order_status in body
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.success) {
-        // Update the local state to reflect the change
-        setOrders(orders.map((order) => (order.id === orderId ? { ...order, status } : order)))
-        setIsEditDialogOpen(false)
+        // Update local orders state to reflect the new status
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId ? { ...order, status } : order
+          )
+        );
+        setIsEditDialogOpen(false); // close edit dialog
       } else {
-        console.error("Failed to update order status:", data.message)
+        console.error("Failed to update order status:", data.message);
       }
     } catch (error) {
-      console.error("Error updating order status:", error)
+      console.error("Error updating order status:", error);
     }
-  }
+  };
+
 
   const filteredOrders = orders.filter(
     (order) =>
@@ -173,6 +179,7 @@ export default function OrdersPage() {
                         <TableHead>Date</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Van Num</TableHead>
+                        <TableHead>Payment Mode</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -188,6 +195,7 @@ export default function OrdersPage() {
                             <TableCell>{order.date}</TableCell>
                             <TableCell>{getStatusBadge(order.status)}</TableCell>
                             <TableCell>{order.driver || "Not assigned"}</TableCell>
+                            <TableCell>{order.paymentMode || "Cash"}</TableCell>
                             <TableCell className="text-right">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -205,20 +213,22 @@ export default function OrdersPage() {
                                     <Eye className="h-4 w-4 mr-2" />
                                     View Details
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      // Only allow editing for cash payment orders
-                                      if (order.paymentMode === "cash") {
+
+                                  {order.paymentMode !== "online" && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
                                         setCurrentOrder(order)
                                         setSelectedStatus(order.status)
                                         setIsEditDialogOpen(true)
-                                      }
-                                    }}
-                                  >
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Edit Status
-                                  </DropdownMenuItem>
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Edit Status
+                                    </DropdownMenuItem>
+                                  )}
                                 </DropdownMenuContent>
+
+
                               </DropdownMenu>
                             </TableCell>
                           </TableRow>
@@ -281,6 +291,11 @@ export default function OrdersPage() {
                       <p className="font-medium">{currentOrder.driver}</p>
                     </div>
                   )}
+
+                  <div className="flex items-start space-x-3">
+                    <DollarSign className="h-5 w-5 text-brand-primary mt-0.5" />
+                    <p className="font-medium">Payment Mode: {currentOrder.paymentMode || "Cash"}</p>
+                  </div>
                 </div>
 
                 <div>
