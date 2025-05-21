@@ -12,6 +12,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast"
 import { ArrowLeft, Loader2 } from "lucide-react"
 
+// const baseUrl = "http://localhost:5000"
+const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
 export default function ForgotPasswordPage() {
   const router = useRouter()
   const { toast } = useToast()
@@ -21,41 +23,32 @@ export default function ForgotPasswordPage() {
   const [otp, setOtp] = useState("")
   const [newPassword, setNewPassword] = useState("")
 
+
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/admin/forgot-password", {
+      const response = await fetch(`${baseUrl}/auth/forgotPasswordOtp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email : email }),
       })
 
       const data = await response.json()
 
-      if (response.ok) {
-        toast({
-          title: "OTP Sent",
-          description: `An OTP has been sent to ${email}`,
-          variant: "default",
-        })
+      if(!data.success) {
+        alert(data.message)
+      }
+      else{
+        alert(data.message)
         setOtpSent(true)
-      } else {
-        toast({
-          title: "Error",
-          description: data.Message || "Failed to send OTP",
-          variant: "destructive",
-        })
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred",
-        variant: "destructive",
-      })
+      alert("Failed to send OTP")
     } finally {
       setIsLoading(false)
     }
@@ -66,7 +59,7 @@ export default function ForgotPasswordPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/admin/reset-password", {
+      const response = await fetch(`${baseUrl}/auth/checkOtp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,26 +73,14 @@ export default function ForgotPasswordPage() {
 
       const data = await response.json()
 
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Password has been reset successfully",
-          variant: "default",
-        })
+      if (data.success) {
+        alert(data.message)
         router.push("/login")
       } else {
-        toast({
-          title: "Error",
-          description: data.Message || "Failed to reset password",
-          variant: "destructive",
-        })
+        alert(data.message)
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred",
-        variant: "destructive",
-      })
+     alert("Failed to update Password")
     } finally {
       setIsLoading(false)
     }
