@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, BarChart3, PieChartIcon, TrendingUp, FileText } from "lucide-react"
 
 
+const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+// const baseUrl = "http://localhost:5000"
 export default function ReportsPage() {
   const [timeRange, setTimeRange] = useState("Daily")
   const [revenue, setRevenue] = useState(0);
@@ -20,7 +22,7 @@ export default function ReportsPage() {
   const [revenueData, setRevenueData] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/admin/regions/revenue")
+    fetch(`${baseUrl}/admin/regions/revenue`)
     .then(res => res.json())
     .then(data => {
       if (data.success) {
@@ -31,7 +33,7 @@ export default function ReportsPage() {
   
 
   useEffect(() => {
-    fetch("http://localhost:5000/admin/services/revenue")
+    fetch(`${baseUrl}/admin/services/revenue`)
       .then((res) => res.json())
       .then((result) => {
         if (result.success) setServiceRevenue(result.data);
@@ -46,7 +48,7 @@ export default function ReportsPage() {
 
     const fetchAverageOrderValue = async () => {
       try {
-        const res = await fetch("http://localhost:5000/admin/orders/average-order-value")
+        const res = await fetch(`${baseUrl}/admin/orders/average-order-value`)
         const data = await res.json()
         console.log("average "+data); // Verify the response
         if (data.success) {
@@ -61,7 +63,7 @@ export default function ReportsPage() {
 
     const fetchOrders = async () => {
       try {
-        const res = await fetch("http://localhost:5000/admin/orders") 
+        const res = await fetch(`${baseUrl}/admin/orders`)
         const data = await res.json()
         if (data.success) {
           setTotalOrders(data.data.length)
@@ -73,7 +75,7 @@ export default function ReportsPage() {
 
     const fetchTotalUsers = async () => {
       try {
-        const res = await fetch("http://localhost:5000/admin/total-users");
+        const res = await fetch(`${baseUrl}/admin/total-users`);
         const data = await res.json();
         console.log(data); // Verify the response
     
@@ -88,7 +90,7 @@ export default function ReportsPage() {
 
     const fetchRevenue = async () => {
       try {
-        const res = await fetch("http://localhost:5000/admin/orders-total-revenue")
+        const res = await fetch(`${baseUrl}/admin/orders-total-revenue`)
         const data = await res.json()
         console.log(data); // Verify the response
         if (data.success) {
@@ -106,6 +108,8 @@ export default function ReportsPage() {
   , [])
 
 
+  // @ts-ignore
+  // @ts-ignore
   return (
     <DashboardLayout>
       <div className="space-y-6">

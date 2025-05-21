@@ -32,6 +32,7 @@ export function Header({ className }: HeaderProps) {
   const handleLogout = () => {
     // Clear the token from localStorage
     localStorage.removeItem("token")
+    localStorage.removeItem("role")
 
     toast({
       title: "Logged out",

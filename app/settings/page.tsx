@@ -13,8 +13,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2, Save, UserPlus, Lock } from "lucide-react"
+import {compileNonPath} from "next/dist/shared/lib/router/utils/prepare-destination";
 
-const baseUrl = 'http://localhost:5000'
+// const baseUrl = 'http://localhost:5000'
+const baseUrl = 'http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins'
 
 export default function SettingsPage() {
   interface BusinessInfo {
@@ -25,6 +27,13 @@ export default function SettingsPage() {
     website: string;
     description: string;
   }
+  interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  }
+
 
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -49,8 +58,54 @@ export default function SettingsPage() {
     }
   }
 
+  const fetchAdmins = async () => {
+    try {
+      const res = await fetch(`${baseUrl}/auth/admin`,{
+        method: "GET",
+        headers: {
+          "Authorization" : `Bearer ${localStorage.getItem("token")}`
+        }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setMockAdmins(data.admins)
+      }
+      else{
+        console.log(data)
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error)
+    }
+  }
+
+  async function deleteAdmin(id:number){
+    try{
+
+      const res = await fetch(`${baseUrl}/auth/deleteAdmin/${id}`, {
+        method: 'DELETE',
+        headers: {
+          "Authorization" : `Bearer ${localStorage.getItem("token")}`
+
+          // Add any auth headers here if needed
+        },
+      })
+      const data = await res.json()
+      console.log(data)
+      return !!data.success;
+
+    }catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+
+
   useEffect(() => {
     fetchSettings()
+    if(localStorage.getItem("role") === 'superAdmin'){
+      fetchAdmins()
+    }
   }, []);
 
 
@@ -85,11 +140,93 @@ export default function SettingsPage() {
     confirmPassword: "",
   })
 
-  const [mockAdmins, setMockAdmins] = useState([
-    { id: 1, name: "John Doe", email: "john@laundryvan.com", role: "Super Admin" },
-    { id: 2, name: "Jane Smith", email: "jane@laundryvan.com", role: "Admin" },
-    { id: 3, name: "Mike Johnson", email: "mike@laundryvan.com", role: "Admin" },
-  ])
+  const [mockAdmins, setMockAdmins] = useState<User[]>([])
+
+  async function updatePassword(){
+    try{
+
+      const res = await fetch(`${baseUrl}/auth/updatePassword`, {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization" : `Bearer ${localStorage.getItem("token")}`,
+
+        },
+        body:JSON.stringify({
+          oldPassword : passwordForm.currentPassword,
+          newPassword : passwordForm.newPassword,
+        })
+      })
+      const data = await res.json()
+      if(!data.success){
+        alert(data.message)
+      }
+      return !!data.success;
+
+    }catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+  async function updateSettings(){
+    try{
+
+      const res = await fetch(`${baseUrl}/settings/1`, {
+        method: 'PUT',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization" : `Bearer ${localStorage.getItem("token")}`,
+
+        },
+        body:JSON.stringify({
+          bussinessName:businessInfo.name,
+          bussinessEmail : businessInfo.email,
+          bussinessPhone : businessInfo.phone,
+          bussinessAddress : businessInfo.address,
+          bussinessWebsite : businessInfo.website,
+          bussinessDescription : businessInfo.description
+        })
+      })
+      const data = await res.json()
+      if(!data.success){
+        alert(data.message)
+      }
+      return !!data.success;
+
+    }catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+  async function addAdmin(){
+    try{
+
+      const res = await fetch(`${baseUrl}/auth/signup`, {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization" : `Bearer ${localStorage.getItem("token")}`,
+
+        },
+        body:JSON.stringify({
+          email:newAdminForm.email,
+          password : newAdminForm.password,
+          name : newAdminForm.name
+        })
+      })
+      const data = await res.json()
+      if(!data.success){
+        alert(data.message)
+      }
+      return !!data.success;
+
+    }catch (e) {
+      console.log(e)
+      return false
+    }
+  }
 
   const handleBusinessInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -120,96 +257,79 @@ export default function SettingsPage() {
     setNewAdminForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async() => {
     setIsLoading(true)
+    if(!businessInfo.address || !businessInfo.email || !businessInfo.phone || !businessInfo.website || !businessInfo.name || !businessInfo.description){
+      alert("All Fields are required")
+    }
 
     // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      toast({
-        title: "Settings saved",
-        description: "Your settings have been saved successfully",
-        variant: "default",
-      })
-    }, 1000)
+    if(await updateSettings()){
+      await fetchSettings()
+    }
+    setIsLoading(false)
+
   }
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     // Validate passwords match
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match",
-        variant: "destructive",
-      })
+      alert("Passwords Do not match")
       setIsLoading(false)
       return
     }
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      toast({
-        title: "Password updated",
-        description: "Your password has been updated successfully",
-        variant: "default",
-      })
+    if(await updatePassword()){
+      alert("Password Updated Successfully")
       setPasswordForm({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       })
-    }, 1000)
+    }
+    setIsLoading(false)
+
   }
 
-  const handleAddAdmin = (e: React.FormEvent) => {
+  const handleAddAdmin =async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     // Validate passwords match
     if (newAdminForm.password !== newAdminForm.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      })
+      alert("Passwords Do not match")
       setIsLoading(false)
       return
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      toast({
-        title: "Admin added",
-        description: `New admin ${newAdminForm.name} has been added successfully`,
-        variant: "default",
-      })
-      setNewAdminForm({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      })
-    }, 1000)
+    if(await addAdmin()){
+      await fetchAdmins()
+    }
+    else{
+      alert("Failed to add Admin")
+    }
+    setNewAdminForm({
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    })
+    setIsLoading(false)
+
+
   }
 
-  const handleDeleteAdmin = (id: number) => {
-    setIsLoading(true)
+  const handleDeleteAdmin = async(id: number) => {
+    if(await deleteAdmin(id)){
+      await fetchAdmins()
+    }
+    else{
+      alert("Failed to Delete Admin")
+    }
+    setIsLoading(false)
 
-    // Simulate API call
-    setTimeout(() => {
-      setMockAdmins(mockAdmins.filter((admin) => admin.id !== id))
-      setIsLoading(false)
-      toast({
-        title: "Admin deleted",
-        description: "The admin has been removed successfully",
-        variant: "default",
-      })
-    }, 1000)
   }
 
   return (
@@ -573,7 +693,7 @@ export default function SettingsPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
+                {localStorage.getItem("role")==="superAdmin"?  <Card>
                   <CardHeader>
                     <CardTitle>Admin Management</CardTitle>
                     <CardDescription>Manage admin users and add new administrators</CardDescription>
@@ -695,7 +815,7 @@ export default function SettingsPage() {
                       </form>
                     </div>
                   </CardContent>
-                </Card>
+                </Card>:<></>}
               </div>
             </TabsContent>
           </Tabs>

@@ -12,6 +12,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
 
+// const baseUrl = "http://localhost:5000"
+const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+
 export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
@@ -31,7 +34,7 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/login", {
+      const response = await fetch(`${baseUrl}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -41,30 +44,19 @@ export default function LoginPage() {
 
       const data = await response.json()
 
-      if (response.ok) {
+      console.log(data)
+
+      if (data.success) {
         // Store token in localStorage
         localStorage.setItem("token", data.token)
-
-        toast({
-          title: "Login successful",
-          description: "Welcome to Laundry-Van Admin Panel",
-          variant: "default",
-        })
+        localStorage.setItem("role",data.role)
 
         router.push("/dashboard")
       } else {
-        toast({
-          title: "Login failed",
-          description: data.Message || "Invalid credentials",
-          variant: "destructive",
-        })
+        alert(data.message)
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred during login",
-        variant: "destructive",
-      })
+      alert("Some Error Occurred")
     } finally {
       setIsLoading(false)
     }

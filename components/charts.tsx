@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react"
 import { Chart, registerables } from "chart.js"
 
 Chart.register(...registerables)
+const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
 
 export function LineChart() {
   const chartRef = useRef<HTMLCanvasElement>(null)
@@ -12,7 +13,7 @@ export function LineChart() {
   useEffect(() => {
     const fetchChartData = async () => {
       try {
-        const response = await fetch("http://localhost:5000/admin/orders/line-chart") // Update this path if your API route differs
+        const response = await fetch(`${baseUrl}/admin/orders/line-chart`) // Update this path if your API route differs
         const result = await response.json()
 
         if (result.success && chartRef.current) {
@@ -90,7 +91,7 @@ export function BarChart() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch("http://localhost:5000/admin/orders/bar-graph")
+        const response = await fetch(`${baseUrl}/admin/orders/bar-graph`)
         const result = await response.json()
 
         if (result.success && chartRef.current) {
@@ -176,7 +177,7 @@ export function OrderLineChart() {
   useEffect(() => {
     const fetchChartData2 = async () => {
       try {
-        const response = await fetch("http://localhost:5000/admin/orders/daily-order-count") 
+        const response = await fetch(`${baseUrl}/admin/orders/daily-order-count`)
         const result = await response.json()
 
         if (result.success && chartRef.current) {
@@ -253,7 +254,7 @@ export function DriverLineChart() {
   useEffect(() => {
     const fetchChartData = async () => {
       try {
-        const response = await fetch("http://localhost:5000/admin/regions/van-count")
+        const response = await fetch(`${baseUrl}/admin/regions/van-count`)
         const result = await response.json()
 
         if (result.success && chartRef.current) {
