@@ -5,65 +5,58 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LineChart, BarChart, OrderLineChart,DriverLineChart } from "@/components/charts"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, BarChart3, PieChartIcon, TrendingUp, FileText } from "lucide-react"
-
+import { LineChart, BarChart, OrderLineChart, DriverLineChart, DriverPieChart } from "@/components/charts"
 
 const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
 // const baseUrl = "http://localhost:5000"
 export default function ReportsPage() {
-  const [timeRange, setTimeRange] = useState("Daily")
-  const [revenue, setRevenue] = useState(0);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const [totalUsers, setTotalUsers]= useState(0);
-  const [average, setAverage] = useState(0);
-  const [serviceRevenue, setServiceRevenue] = useState([]);
-  const [revenueData, setRevenueData] = useState([]);
+  const [timeRange, setTimeRange] = useState("daily")
+  const [revenue, setRevenue] = useState(0)
+  const [totalOrders, setTotalOrders] = useState(0)
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [average, setAverage] = useState(0)
+  const [serviceRevenue, setServiceRevenue] = useState([])
+  const [revenueData, setRevenueData] = useState([])
 
   useEffect(() => {
-    fetch(`${baseUrl}/admin/regions/revenue`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        setRevenueData(data.data); 
-      }
-    });  
-  }, [])
-  
+    fetch(`${baseUrl}/admin/regions/revenue?timeRange=${timeRange.toLowerCase()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setRevenueData(data.data)
+        }
+      })
+  }, [timeRange])
 
   useEffect(() => {
-    fetch(`${baseUrl}/admin/services/revenue`)
+    fetch(`${baseUrl}/admin/services/revenue?timeRange=${timeRange.toLowerCase()}`)
       .then((res) => res.json())
       .then((result) => {
-        if (result.success) setServiceRevenue(result.data);
-        else console.warn("Failed to load service revenue");
+        if (result.success) setServiceRevenue(result.data)
+        else console.warn("Failed to load service revenue")
       })
-      .catch((err) => console.error("Error loading revenue:", err));
-  }, []);
-
-
+      .catch((err) => console.error("Error loading revenue:", err))
+  }, [timeRange])
 
   useEffect(() => {
-
     const fetchAverageOrderValue = async () => {
       try {
-        const res = await fetch(`${baseUrl}/admin/orders/average-order-value`)
+        const res = await fetch(`${baseUrl}/admin/orders/average-order-value?timeRange=${timeRange.toLowerCase()}`)
         const data = await res.json()
-        console.log("average "+data); // Verify the response
+        console.log("average " + data)
         if (data.success) {
           setAverage(data.averageOrderValue)
         }
-      }
-      catch (error) {
+      } catch (error) {
         console.error("Error fetching average order value:", error)
       }
     }
-    
 
     const fetchOrders = async () => {
       try {
-        const res = await fetch(`${baseUrl}/admin/orders`)
+        const res = await fetch(`${baseUrl}/admin/orders?timeRange=${timeRange.toLowerCase()}`)
         const data = await res.json()
         if (data.success) {
           setTotalOrders(data.data.length)
@@ -75,24 +68,23 @@ export default function ReportsPage() {
 
     const fetchTotalUsers = async () => {
       try {
-        const res = await fetch(`${baseUrl}/admin/total-users`);
-        const data = await res.json();
-        console.log(data); // Verify the response
-    
-        // Use 'total_users' instead of 'totalUsers'
+        const res = await fetch(`${baseUrl}/admin/total-users?timeRange=${timeRange.toLowerCase()}`)
+        const data = await res.json()
+        console.log(data)
+
         if (data.success) {
-          setTotalUsers(data.total_users);
+          setTotalUsers(data.total_users)
         }
       } catch (error) {
-        console.error("Error fetching total users:", error);
+        console.error("Error fetching total users:", error)
       }
-    };
+    }
 
     const fetchRevenue = async () => {
       try {
-        const res = await fetch(`${baseUrl}/admin/orders-total-revenue`)
+        const res = await fetch(`${baseUrl}/admin/orders-total-revenue?timeRange=${timeRange.toLowerCase()}`)
         const data = await res.json()
-        console.log(data); // Verify the response
+        console.log(data)
         if (data.success) {
           setRevenue(data.totalRevenue)
         }
@@ -100,13 +92,12 @@ export default function ReportsPage() {
         console.error("Error fetching revenue:", error)
       }
     }
+
     fetchRevenue()
     fetchOrders()
     fetchTotalUsers()
     fetchAverageOrderValue()
-  }
-  , [])
-
+  }, [timeRange])
 
   // @ts-ignore
   // @ts-ignore
@@ -119,14 +110,17 @@ export default function ReportsPage() {
             <p className="text-text-muted mt-2">View detailed reports and analytics for your business</p>
           </div>
           <div className="flex items-center space-x-4">
-            <Select defaultValue={timeRange} onValueChange={setTimeRange}>
+            <Select
+              defaultValue={timeRange.toLowerCase()}
+              onValueChange={(value) => setTimeRange(value.charAt(0).toUpperCase() + value.slice(1))}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select time range" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="daily">Daily</SelectItem>
-                {/* <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="yearly">Yearly</SelectItem> */}
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="yearly">Yearly</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" className="flex items-center gap-2">
@@ -173,7 +167,6 @@ export default function ReportsPage() {
                 <div>
                   <p className="text-text-muted text-sm">Average Order Value</p>
                   <h3 className="text-2xl font-bold text-text-dark mt-1">AED {average}</h3>
-                  
                 </div>
                 <div className="h-12 w-12 rounded-full bg-bg-accent-light flex items-center justify-center">
                   <BarChart3 className="h-6 w-6 text-brand-primary" />
@@ -216,7 +209,7 @@ export default function ReportsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <LineChart />
+                  <LineChart timeRange={timeRange} />
                 </CardContent>
               </Card>
               <Card className="lg:col-span-3">
@@ -225,7 +218,7 @@ export default function ReportsPage() {
                   <CardDescription>Breakdown of revenue by service type</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <BarChart />
+                  <BarChart timeRange={timeRange} />
                 </CardContent>
               </Card>
             </div>
@@ -299,30 +292,38 @@ export default function ReportsPage() {
                   <p className="text-text-muted">Order analytics content coming soon</p>
                 </div> */}
                 <div className="h-[300px] w-full relative">
-                  <OrderLineChart />
+                  <OrderLineChart timeRange={timeRange} />
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="drivers">
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Analytics</CardTitle>
-                <CardDescription>Detailed analysis of order patterns and trends</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* <div className="h-[400px] flex items-center justify-center border border-dashed border-line-medium rounded-md">
-                  <p className="text-text-muted">Order analytics content coming soon</p>
-                </div> */}
-                <div className="h-[300px] w-full relative">
-                  <DriverLineChart />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Order Analytics</CardTitle>
+                  <CardDescription>Detailed analysis of order patterns and trends</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative">
+                    <DriverLineChart timeRange={timeRange} />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Drivers by Region</CardTitle>
+                  <CardDescription>Pie chart of drivers per region</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative">
+                    <DriverPieChart />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
-
-          
         </Tabs>
       </div>
     </DashboardLayout>
