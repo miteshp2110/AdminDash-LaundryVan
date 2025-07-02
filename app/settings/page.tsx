@@ -15,8 +15,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Loader2, Save, UserPlus, Lock } from "lucide-react"
 import {compileNonPath} from "next/dist/shared/lib/router/utils/prepare-destination";
 
-// const baseUrl = 'http://localhost:5000'
-const baseUrl = 'http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins'
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 
 export default function SettingsPage() {
   interface BusinessInfo {

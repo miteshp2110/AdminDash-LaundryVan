@@ -7,9 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, LineChart } from "@/components/charts"
 import { ShoppingCart, Users, Truck, Package, ArrowUp, ArrowDown, DollarSign, Calendar } from "lucide-react"
 
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 
-
-const baseUrl = 'http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins'
 export default function DashboardPage() {
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalUsers, setTotalUsers]= useState(0);

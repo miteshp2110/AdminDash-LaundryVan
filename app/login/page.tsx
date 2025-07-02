@@ -12,8 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
 
-// const baseUrl = "http://localhost:5000"
-const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 
 export default function LoginPage() {
   const router = useRouter()

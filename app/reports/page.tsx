@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, BarChart3, PieChartIcon, TrendingUp, FileText } from "lucide-react"
 
 
-const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 // const baseUrl = "http://localhost:5000"
 export default function ReportsPage() {
   const [timeRange, setTimeRange] = useState("Daily")

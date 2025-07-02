@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react"
 import { Chart, registerables } from "chart.js"
 
 Chart.register(...registerables)
-const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 
 export function LineChart() {
   const chartRef = useRef<HTMLCanvasElement>(null)
