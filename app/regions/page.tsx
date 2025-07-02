@@ -26,7 +26,7 @@ const loader = new Loader({
   version: 'weekly',
 });
 
-const baseurl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+const baseurl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 declare global {
   interface Window {
     google: typeof google

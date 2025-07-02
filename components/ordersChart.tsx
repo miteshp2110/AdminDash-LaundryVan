@@ -12,7 +12,8 @@ export function OrderLineChart() {
   useEffect(() => {
     const fetchChartData = async () => {
       try {
-        const response = await fetch("http://localhost:5000/admin/orders/daily-order-count") 
+        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
+        const response = await fetch(`${baseUrl}/admin/orders/daily-order-count`) 
         const result = await response.json()
 
         if (result.success && chartRef.current) {

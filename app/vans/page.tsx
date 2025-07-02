@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { MoreVertical, Plus, Edit, Trash, Search } from "lucide-react"
 
-const baseUrl = 'http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins'
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 
 // Sample regions for dropdown
 

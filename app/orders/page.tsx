@@ -23,7 +23,7 @@ import { MoreVertical, Eye, Edit, Truck, Search, Calendar, MapPin, Package, User
 import {Property} from "csstype";
 import Order = Property.Order;
 
-const baseUrl = 'http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins'
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 
 export default function OrdersPage() {
   interface OrderItem {
@@ -71,7 +71,7 @@ export default function OrdersPage() {
   const updateOrderStatus = async (orderId: string, status: string) => {
     
     try {
-      const response = await fetch(`http://localhost:5000/admin/orders/${orderId}`, { // pass orderId in URL
+      const response = await fetch(`${baseUrl}/admin/orders/${orderId}`, { // pass orderId in URL
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

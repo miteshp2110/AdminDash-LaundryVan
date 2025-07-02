@@ -3,8 +3,9 @@
 import React, {useEffect} from "react"
 
 
-// const baseUrl = "http://localhost:5000"
-const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+// const baseUrl = "http://localhost:5001"
+// const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 
 import { useState, useRef } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"

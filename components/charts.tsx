@@ -5,8 +5,8 @@ import { Chart, registerables } from "chart.js"
 import { PieController, ArcElement, Tooltip, Legend } from "chart.js"
 
 Chart.register(...registerables)
-Chart.register(PieController, ArcElement, Tooltip, Legend)
-const baseUrl = "http://ec2-65-0-21-246.ap-south-1.compute.amazonaws.com/admins"
+
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 
 export function LineChart({ timeRange }: { timeRange: string }) {
   const chartRef = useRef<HTMLCanvasElement>(null)
