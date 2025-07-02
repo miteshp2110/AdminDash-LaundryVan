@@ -2,18 +2,20 @@
 
 import { useEffect, useRef } from "react"
 import { Chart, registerables } from "chart.js"
+import { PieController, ArcElement, Tooltip, Legend } from "chart.js"
 
 Chart.register(...registerables)
+
 const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
 
-export function LineChart() {
+export function LineChart({ timeRange }: { timeRange: string }) {
   const chartRef = useRef<HTMLCanvasElement>(null)
   const chartInstance = useRef<Chart | null>(null)
 
   useEffect(() => {
     const fetchChartData = async () => {
       try {
-        const response = await fetch(`${baseUrl}/admin/orders/line-chart`) // Update this path if your API route differs
+        const response = await fetch(`${baseUrl}/admin/orders/line-chart?timeRange=${timeRange}`)
         const result = await response.json()
 
         if (result.success && chartRef.current) {
@@ -22,8 +24,18 @@ export function LineChart() {
           if (ctx) {
             if (chartInstance.current) chartInstance.current.destroy()
 
-            const labels = result.chartData.map((item: any) => item.date)
-            const data = result.chartData.map((item: any) => item.total_revenue)
+            // Adapt labels based on timeRange
+            let labels, data;
+            if (timeRange === "daily") {
+              labels = result.chartData.map((item: any) => item.date)
+              data = result.chartData.map((item: any) => item.total_revenue)
+            } else if (timeRange === "monthly") {
+              labels = result.chartData.map((item: any) => `Month ${item.month}`)
+              data = result.chartData.map((item: any) => item.total_revenue)
+            } else if (timeRange === "yearly") {
+              labels = result.chartData.map((item: any) => item.year)
+              data = result.chartData.map((item: any) => item.total_revenue)
+            }
 
             chartInstance.current = new Chart(ctx, {
               type: "line",
@@ -78,7 +90,7 @@ export function LineChart() {
     return () => {
       if (chartInstance.current) chartInstance.current.destroy()
     }
-  }, [])
+  }, [timeRange])
 
   return <canvas ref={chartRef} height={300} />
 }
@@ -318,6 +330,67 @@ export function DriverLineChart() {
 
     fetchChartData()
 
+    return () => {
+      if (chartInstance.current) chartInstance.current.destroy()
+    }
+  }, [])
+
+  return <canvas ref={chartRef} height={300} />
+}
+
+export function DriverPieChart() {
+  const chartRef = useRef<HTMLCanvasElement>(null)
+  const chartInstance = useRef<Chart | null>(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`${baseUrl}/admin/regions/van-count`)
+        const result = await response.json()
+        if (result.success && chartRef.current) {
+          const ctx = chartRef.current.getContext("2d")
+          if (!ctx) return
+
+          if (chartInstance.current) chartInstance.current.destroy()
+
+          const labels = result.data.map((item: any) => item.region_name)
+          const data = result.data.map((item: any) => item.van_count)
+
+          chartInstance.current = new Chart(ctx, {
+            type: "pie",
+            data: {
+              labels,
+              datasets: [
+                {
+                  data,
+                  backgroundColor: [
+                    "#ED5050",
+                    "#E6F7FF",
+                    "#F39739",
+                    "#219653",
+                    "#5B8DEF",
+                    "#F25F4C",
+                  ].slice(0, labels.length),
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: "bottom",
+                },
+              },
+            },
+          })
+        }
+      } catch (error) {
+        console.error("Failed to fetch van count by region:", error)
+      }
+    }
+
+    fetchData()
     return () => {
       if (chartInstance.current) chartInstance.current.destroy()
     }
