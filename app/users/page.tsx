@@ -58,9 +58,9 @@ export default function UsersPage() {
 
   const filteredUsers = users.filter(
     (user) =>
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone.includes(searchTerm),
+      user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.phone?.includes(searchTerm),
   )
 
   return (

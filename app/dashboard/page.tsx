@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, LineChart } from "@/components/charts"
+import { getMonth, getYear, isSameMonth } from "date-fns"
 import { ShoppingCart, Users, Truck, Package, ArrowUp, ArrowDown, DollarSign, Calendar } from "lucide-react"
 
 const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (() => { throw new Error('NEXT_PUBLIC_BACKEND_URL is not set'); })();
@@ -14,6 +15,8 @@ export default function DashboardPage() {
   const [totalUsers, setTotalUsers]= useState(0);
   const [activeDrivers, setActiveDrivers] = useState(0);
   const [revenue, setRevenue] = useState(0);
+  const [ordersRaw, setOrdersRaw] = useState<any[]>([]);
+  const [servicesRevenueRaw, setServicesRevenueRaw] = useState<any[]>([]);
   interface Order {
     order_id: string;
     categories: string;
@@ -37,9 +40,21 @@ export default function DashboardPage() {
         const data = await res.json()
         if (data.success) {
           setTotalOrders(data.data.length)
+          setOrdersRaw(data.data || [])
         }
       } catch (error) {
         console.error("Error fetching orders:", error)
+      }
+    }
+    const fetchServicesRevenue = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/admin/services/revenue`)
+        const data = await res.json()
+        if (data.success) {
+          setServicesRevenueRaw(data.data || [])
+        }
+      } catch (error) {
+        console.error("Error fetching services revenue:", error)
       }
     }
     const fetchTotalUsers = async () => {
@@ -116,10 +131,47 @@ export default function DashboardPage() {
     fetchPickups();
     fetchRecentOrders();
     fetchOrders()
+    fetchServicesRevenue()
     fetchTotalUsers()
     fetchActiveDrivers()
     fetchRevenue()
   }, [])
+
+  // Compute current month and year
+  const currentMonth = getMonth(new Date())
+  const currentYear = getYear(new Date())
+
+  // Filter orders to current month for the LineChart
+  const monthlyOrders = useMemo(() => {
+    return (ordersRaw || []).filter((order: any) => {
+      const createdAt = order.created_at || order.createdAt || order.timestamp
+      if (!createdAt) return false
+      return isSameMonth(new Date(createdAt), new Date(currentYear, currentMonth))
+    })
+  }, [ordersRaw, currentMonth, currentYear])
+
+  // Prepare service revenue for current month for the BarChart
+  const monthlyServiceRevenue = useMemo(() => {
+    // Expecting items with service_name or name, and revenue or amount, optional created_at
+    const filtered = (servicesRevenueRaw || []).filter((item: any) => {
+      if (!item.created_at) return true // if no date provided, include (backend aggregates)
+      return isSameMonth(new Date(item.created_at), new Date(currentYear, currentMonth))
+    })
+
+    // Aggregate by service name
+    const map: { [key: string]: number } = {}
+    for (const s of filtered) {
+      const name = s.service_name || s.name || 'Unknown Service'
+      const amount = Number(s.revenue ?? s.amount ?? 0)
+      map[name] = (map[name] || 0) + amount
+    }
+    const total = Object.values(map).reduce((a, b) => a + b, 0)
+    return Object.entries(map).map(([name, amount]) => ({
+      name,
+      amount,
+      percentage: total > 0 ? Number(((amount / total) * 100).toFixed(1)) : 0,
+    }))
+  }, [servicesRevenueRaw, currentMonth, currentYear])
 
   return (
     <DashboardLayout>
@@ -209,7 +261,12 @@ export default function DashboardPage() {
                   <CardDescription>Monthly revenue for the current year</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <LineChart />
+                  <LineChart
+                    data={monthlyOrders}
+                    filterType={"monthly"}
+                    selectedMonth={currentMonth}
+                    selectedYear={currentYear}
+                  />
                 </CardContent>
               </Card>
 
@@ -219,7 +276,7 @@ export default function DashboardPage() {
                   <CardDescription>Breakdown of services by popularity</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <BarChart />
+                  <BarChart data={monthlyServiceRevenue} filterType={"monthly"} timeRange={"monthly"} />
                 </CardContent>
               </Card>
             </div>
